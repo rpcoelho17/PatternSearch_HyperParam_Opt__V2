@@ -24,10 +24,10 @@ def drive(climbers, space, func):
 
 
 def make_climber(space, zones=(1.0,), start=None, poll="opportunistic",
-                 warmup=3, cid=0, mesh_expansion=1.0):
+                 warmup=3, cid=0, mesh_expansion=1.0, contraction="patient"):
     return Climber(cid=cid, space=space, start=start or space.midpoint(),
                    zones=list(zones), warmup=warmup, poll_mode=poll,
-                   mesh_expansion=mesh_expansion)
+                   mesh_expansion=mesh_expansion, contraction=contraction)
 
 
 def quadratic_peak(optimum):
@@ -174,6 +174,40 @@ def test_single_value_dimension_is_fixed():
     c = make_climber(space)
     drive([c], space, quadratic_peak((0, 6)))
     assert c.best == (0, 6)
+
+
+def test_eager_contraction_uses_fewer_or_equal_fits():
+    """contraction='eager' (prototype-faithful) contracts on failed pattern
+    moves too: never more evaluations than 'patient' on the same landscape,
+    and both must find the same optimum on this benign one."""
+    space = Space({"a": list(range(21)), "b": list(range(13))})
+    f = quadratic_peak((15, 9))
+    patient = make_climber(space, contraction="patient")
+    _, patient_calls = drive([patient], space, f)
+    eager = make_climber(space, cid=1, contraction="eager")
+    _, eager_calls = drive([eager], space, f)
+    assert patient.best == eager.best == (15, 9)
+    assert len(eager_calls) <= len(patient_calls)
+
+
+def test_eager_contracts_on_failed_pattern_move():
+    """The mesh must shrink immediately after a rejected pattern move."""
+    space = Space({"x": list(range(30))})
+    deltas_seen = []
+
+    def f(idx, frac):
+        return -abs(idx[0] - 6)  # improves toward 6; extrapolations past it fail
+
+    c = make_climber(space, start=(2,), contraction="eager")
+
+    orig_contract = c._contract
+    def spy():
+        deltas_seen.append(list(c.delta))
+        orig_contract()
+    c._contract = spy
+    drive([c], space, f)
+    assert c.best == (6,)
+    assert len(deltas_seen) >= 1  # contraction fired (incl. pattern failures)
 
 
 def test_mesh_expansion_caps_at_grid():

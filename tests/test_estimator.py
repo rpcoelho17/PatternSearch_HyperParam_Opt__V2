@@ -131,6 +131,16 @@ def test_invalid_params_raise(data):
         make_search(poll="bogus").fit(X, y)
     with pytest.raises(ValueError, match="mesh_expansion"):
         make_search(mesh_expansion=0.5).fit(X, y)
+    with pytest.raises(ValueError, match="contraction"):
+        make_search(contraction="lazy").fit(X, y)
+
+
+def test_eager_contraction_end_to_end(data):
+    X, y = data
+    search = make_search(contraction="eager").fit(X, y)
+    assert search.best_params_
+    ref = make_search().fit(X, y)
+    assert len(search.cv_results_["params"]) <= len(ref.cv_results_["params"])
 
 
 def test_tuple_grid_spec(data):

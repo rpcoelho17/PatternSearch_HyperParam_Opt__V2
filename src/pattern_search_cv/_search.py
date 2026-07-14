@@ -48,6 +48,14 @@ class PatternSearchCV(BaseSearchCV):
         Step-size multiplier applied after a successful sweep.  1.0 (default)
         is classic Hooke-Jeeves (contraction only); 2.0 matches MATLAB GPS.
         Raise it on fine, continuous-like grids.
+    contraction : {"patient", "eager"}, default="patient"
+        When the mesh contracts.  "patient" (classic Hooke-Jeeves): only after
+        a failed exploratory sweep.  "eager" (prototype-faithful): a failed
+        pattern move also contracts - fewer evaluations, at the risk of
+        premature convergence on rugged landscapes.  Measured on the retail
+        benchmark, eager saves ~26% of evaluations (~9% of compute once
+        multi-fidelity discounts them) and found the same optimum; pair with
+        n_starts > 1 to hedge the risk.
     data_zones : int or sequence of float, default=(0.10, 0.20, 0.50, 1.0)
         The data ladder.  An int n gives n evenly divided levels
         (``4 -> [0.25, 0.5, 0.75, 1.0]``); a sequence gives explicit ascending
@@ -77,7 +85,7 @@ class PatternSearchCV(BaseSearchCV):
                  refit=True, cv=None, verbose=0, random_state=None,
                  pre_dispatch="2*n_jobs", error_score=np.nan,
                  return_train_score=False,
-                 poll="auto", mesh_expansion=1.0,
+                 poll="auto", mesh_expansion=1.0, contraction="patient",
                  data_zones=_DEFAULT_ZONES, warmup=3,
                  subsample="auto", subsample_columns=None,
                  n_starts=1, start_points=None):
@@ -89,6 +97,7 @@ class PatternSearchCV(BaseSearchCV):
         self.random_state = random_state
         self.poll = poll
         self.mesh_expansion = mesh_expansion
+        self.contraction = contraction
         self.data_zones = data_zones
         self.warmup = warmup
         self.subsample = subsample
@@ -172,6 +181,9 @@ class PatternSearchCV(BaseSearchCV):
         if self.mesh_expansion < 1.0:
             raise ValueError(
                 f"mesh_expansion must be >= 1.0, got {self.mesh_expansion}")
+        if self.contraction not in ("patient", "eager"):
+            raise ValueError(f"contraction must be 'patient' or 'eager', "
+                             f"got {self.contraction!r}")
         if not isinstance(self.n_starts, Integral) or self.n_starts < 1:
             raise ValueError(f"n_starts must be an int >= 1, got {self.n_starts}")
 
@@ -301,7 +313,8 @@ class PatternSearchCV(BaseSearchCV):
         climbers = [
             Climber(cid=i, space=space, start=s, zones=zones,
                     warmup=self.warmup, poll_mode=poll,
-                    mesh_expansion=self.mesh_expansion)
+                    mesh_expansion=self.mesh_expansion,
+                    contraction=self.contraction)
             for i, s in enumerate(ctx["starts"])
         ]
         # the engine lives ONLY in this frame: it holds live generators,

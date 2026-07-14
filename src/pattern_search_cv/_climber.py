@@ -32,7 +32,7 @@ class Climber:
     """One independent pattern search run (single start = a swarm of one)."""
 
     def __init__(self, cid, space, start, zones, warmup, poll_mode,
-                 mesh_expansion=1.0):
+                 mesh_expansion=1.0, contraction="patient"):
         self.id = cid
         self.space = space
         self.start = tuple(start)
@@ -45,6 +45,7 @@ class Climber:
         self.warmup = warmup              # counts POSITIONS, start included
         self.poll_mode = poll_mode        # "complete" | "opportunistic"
         self.mesh_expansion = mesh_expansion
+        self.contraction = contraction    # "patient" (classic HJ) | "eager"
         self.n_positions = 1              # start counts as position 1
         self.readings = []                # warm-up displacement readings
         self.D = None                     # calibrated travel scale
@@ -123,11 +124,16 @@ class Climber:
                         self.pattern_ref = self.position  # compound: ref = prev base
                         yield from self._commit_move(target, ps, kind="pattern")
                     else:
-                        # failed pattern move: back to exploring, NO contraction
+                        # failed pattern move: back to exploring. "patient"
+                        # (classic HJ, default) keeps the mesh; "eager"
+                        # (prototype-faithful) also contracts - fewer fits,
+                        # premature-convergence risk.
                         logger.debug("climber %s pattern move to %s failed (%.6g <= %.6g)",
                                      self.id, target, ps if ps == ps else float("nan"),
                                      self.best_score)
                         self.pattern_ref = None
+                        if self.contraction == "eager":
+                            self._contract()
             else:
                 # exploration around a confirmed base failed -> contract mesh
                 self.pattern_ref = None
