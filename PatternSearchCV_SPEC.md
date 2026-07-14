@@ -54,7 +54,7 @@ PatternSearchCV(
                                  #  cost-neutral on the retail benchmark (24 vs 23
                                  #  evals, same optimum) — benefit is landscape-
                                  #  dependent; premature-convergence risk remains.
-                                 #  See EXPERIMENTS.md Experiment 8.
+                                 #  See EXPERIMENTS.md Experiment 5.
     # --- multi-fidelity ---
     data_zones=(0.10, 0.20, 0.50, 1.0),  # int n -> n even levels (4 -> [.25,.5,.75,1]);
                                  #  or explicit ascending values ending in 1.0 for
