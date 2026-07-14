@@ -297,6 +297,42 @@ original configuration.
 
 ---
 
+## Experiment 8 — Eager contraction, controlled single-variable test (2026-07-14)
+
+Notebook: `Eager_26grid.ipynb`. `contraction="eager"` (prototype-faithful:
+failed pattern moves also contract), everything else identical to the
+head-to-head's new-algorithm run (same seed, grid, MAE objective,
+opportunistic poll, default bullseye).
+
+| | patient (default) | eager |
+|---|---|---|
+| evaluations | 23 | 24 |
+| full-fit equivalents | 6.80 | 6.90 |
+| wall-clock | 824.1 s | 688.8 s (run variance, not policy) |
+| best point | (4, 150, 17) | (4, 150, 17) — identical |
+| CV MAE / R² | 805.730 / 0.809981 | identical |
+
+**Finding: contraction policy is cost-neutral in the new architecture on this
+landscape.** The earlier "~26% fewer evaluations" attributed to eager-style
+contraction was a confounded inference (V2 prototype's 17 evals vs patient's
+23 mixed contraction policy with sweep-drift semantics, dedup handling,
+compounding refs, and fidelity-protocol evals). Isolated, the policy changes
+the path but not the cost. Docstring and spec corrected accordingly; the
+parameter stays (harmless, landscape-dependent, prototype-faithful mode has
+documentary value), default remains "patient".
+
+Updated five-way table (26-value grid, this machine):
+
+| | V1 proto (R²) | NEW patient | NEW eager | Optuna TPE | Optuna GP |
+|---|---|---|---|---|---|
+| evaluations | 33 | 23 | 24 | 15 | 15 |
+| full-fit equiv | 33.00 | **6.80** | 6.90 | 15.00 | 15.00 |
+| wall-clock | 1710.9 s | 824.1 s | 688.8 s | 828.7 s | 964.6 s |
+| best point | (4,150,17) | (4,150,17) | (4,150,17) | (4,100,17) | (4,150,17) |
+| CV MAE | 805.730 | 805.730 | 805.730 | 810.553 | 805.730 |
+
+---
+
 ## Open questions queued for future experiments
 
 - `subsample='stratified'` (transition sampling) vs `'expanding'` on this dataset —

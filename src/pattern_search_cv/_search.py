@@ -51,11 +51,12 @@ class PatternSearchCV(BaseSearchCV):
     contraction : {"patient", "eager"}, default="patient"
         When the mesh contracts.  "patient" (classic Hooke-Jeeves): only after
         a failed exploratory sweep.  "eager" (prototype-faithful): a failed
-        pattern move also contracts - fewer evaluations, at the risk of
-        premature convergence on rugged landscapes.  Measured on the retail
-        benchmark, eager saves ~26% of evaluations (~9% of compute once
-        multi-fidelity discounts them) and found the same optimum; pair with
-        n_starts > 1 to hedge the risk.
+        pattern move also contracts, spending step resolution faster at the
+        risk of premature convergence on rugged landscapes.  In a controlled
+        single-variable test on the retail benchmark the two policies were
+        cost-neutral (24 vs 23 evaluations, identical optimum) - any benefit
+        is landscape-dependent.  If using "eager", pair with n_starts > 1 to
+        hedge the premature-convergence risk.
     data_zones : int or sequence of float, default=(0.10, 0.20, 0.50, 1.0)
         The data ladder.  An int n gives n evenly divided levels
         (``4 -> [0.25, 0.5, 0.75, 1.0]``); a sequence gives explicit ascending

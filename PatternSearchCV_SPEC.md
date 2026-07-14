@@ -50,9 +50,11 @@ PatternSearchCV(
     mesh_expansion=1.0,          # 1.0 = off (default); 2.0 = MATLAB GPS parity
     contraction="patient",       # "patient" = classic HJ (contract only on failed
                                  #  sweeps); "eager" = prototype-faithful (failed
-                                 #  pattern moves also contract: fewer fits, risk of
-                                 #  premature convergence; measured: same optimum,
-                                 #  ~26% fewer evals, ~9% less compute — EXPERIMENTS.md)
+                                 #  pattern moves also contract). Controlled test:
+                                 #  cost-neutral on the retail benchmark (24 vs 23
+                                 #  evals, same optimum) — benefit is landscape-
+                                 #  dependent; premature-convergence risk remains.
+                                 #  See EXPERIMENTS.md Experiment 8.
     # --- multi-fidelity ---
     data_zones=(0.10, 0.20, 0.50, 1.0),  # int n -> n even levels (4 -> [.25,.5,.75,1]);
                                  #  or explicit ascending values ending in 1.0 for
