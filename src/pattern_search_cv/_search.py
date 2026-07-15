@@ -252,6 +252,10 @@ class PatternSearchCV(BaseSearchCV):
                     else "5-fold KFold (sklearn default)")
         for d in space.dims:
             logger.info("  %s : %s", d.name, d.values)
+        logger.info("contraction=%r, n_starts=%d, warmup=%d%s",
+                    self.contraction, self.n_starts, self.warmup,
+                    "" if self.mesh_expansion == 1.0 else
+                    f", mesh_expansion={self.mesh_expansion}")
 
         # ---- resource floor: every zone must feed the CV enough rows ----
         n_splits_guess = getattr(self.cv, "n_splits", None) or (
@@ -356,6 +360,8 @@ class PatternSearchCV(BaseSearchCV):
                 "opportunistic")
             logger.info("poll='auto' resolved to %r (n_jobs=%s, n_splits=%d)",
                         poll, self.n_jobs, self.n_splits_)
+        else:
+            logger.info("poll=%r (explicit, not auto-resolved)", poll)
 
         splitters = {}
         for frac, size in zip(zones, sizes):

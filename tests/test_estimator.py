@@ -64,6 +64,27 @@ def test_verbose_header_names_the_metric(data, caplog):
     assert header_idx < decision_idx
 
 
+@pytest.mark.parametrize("poll", ["auto", "opportunistic", "complete"])
+@pytest.mark.parametrize("contraction", ["patient", "eager"])
+def test_verbose_header_reports_poll_and_contraction(data, caplog, poll,
+                                                      contraction):
+    """poll and contraction must be logged regardless of whether poll is
+    left at 'auto' or set explicitly - a prior bug only logged poll when it
+    resolved from 'auto', silently omitting it for explicit values, and
+    never logged contraction at all."""
+    X, y = data
+    with caplog.at_level("INFO", logger="pattern_search_cv"):
+        make_search(poll=poll, contraction=contraction, verbose=1).fit(X, y)
+    messages = [r.message for r in caplog.records]
+    assert any(f"contraction={contraction!r}" in m for m in messages)
+    assert any(m.startswith("poll=") or "poll=" in m for m in messages), (
+        "no poll= line logged at all")
+    if poll == "auto":
+        assert any("resolved to" in m for m in messages)
+    else:
+        assert any(f"poll={poll!r}" in m for m in messages)
+
+
 def test_verbose_logs_cv_summary_matching_prototype_format(data, caplog):
     """verbose>=1 must log a full CrossEval-style summary at the end of fit:
     per-fold arrays AND their means for EV/MAE/MSE/RMSE/R2, on the winning

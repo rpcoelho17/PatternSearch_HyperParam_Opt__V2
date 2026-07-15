@@ -422,6 +422,19 @@ can't continue indefinitely.
 
 ---
 
+## Experiment 9 — Patient/Eager, zones [1%, 5%, 10%, 100%], verbose=0 (running)
+
+Notebook: `PE_Round_1_5_10_100.ipynb`. Continuing the starting-zone
+progression from Experiment 8 (10% → 5% → 2.5%, each a win or tie so far):
+does `subsample='stratified'` hold at an even more aggressive 1% starting
+zone (~4,184 rows), or is this finally below its reliability floor?
+`subsample='stratified'` explicit, `poll='opportunistic'` explicit,
+`verbose=0`.
+
+*(results pending)*
+
+---
+
 ## Open questions queued for future experiments
 
 - `subsample='stratified'` (transition sampling) vs `'expanding'` on this dataset —
