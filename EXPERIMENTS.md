@@ -420,9 +420,33 @@ next step is finding where this trend actually breaks (1%? 0.5%?), since
 every default-tuning decision so far has been "more aggressive won" and that
 can't continue indefinitely.
 
+**Methodology note — what "stratified" is actually doing on this dataset
+(2026-07-15).** Every stratified run so far, including Experiments 7–9, has
+logged `stratified_order: 418,416 rows, 418,416 runs (1.0 rows/run avg)` —
+every single row is its own "run." `subsample` watches **all** feature
+columns by default, and this dataset carries several continuous daily
+weather columns (temperature, humidity, pressure, wind, precipitation, dew
+point) that essentially never repeat between consecutive rows. So even
+though `StoreID`/`IsOpen`/`HasPromotions`/etc. genuinely do repeat for many
+consecutive days, the moment any one of ~15 weather columns ticks — which
+happens almost every row — the whole row counts as a "transition." The
+sampler has therefore been running in its documented fail-soft degenerate
+mode this whole time: it collapses to **systematic full-timeline sampling**
+(evenly spread picks across the whole year, never just the oldest slice),
+not its designed behavior of prioritizing genuine categorical transitions
+over repeated "typical" rows. This is almost certainly *why* stratified
+keeps winning regardless of how small the rung gets (Experiments 7–9 below):
+an evenly-spread sample stays a faithful miniature of the whole year no
+matter how sparse, whereas `expanding`'s failure mode (Experiment 6) was
+about being unrepresentative in *time*, not about sample size. The
+sampler's actual signature mechanism (novel-combination seats, alternating
+boundary/midpoint priority) has not yet been exercised end-to-end on this
+dataset — that needs `subsample_columns` narrowed to genuinely categorical,
+slow-changing columns so real multi-row runs actually form.
+
 ---
 
-## Experiment 9 — Patient/Eager, zones [1%, 5%, 10%, 100%], verbose=0 (running)
+## Experiment 9 — Patient/Eager, zones [1%, 5%, 10%, 100%], verbose=0 (2026-07-15, done)
 
 Notebook: `PE_Round_1_5_10_100.ipynb`. Continuing the starting-zone
 progression from Experiment 8 (10% → 5% → 2.5%, each a win or tie so far):
@@ -431,7 +455,47 @@ zone (~4,184 rows), or is this finally below its reliability floor?
 `subsample='stratified'` explicit, `poll='opportunistic'` explicit,
 `verbose=0`.
 
-*(results pending)*
+**Results**
+
+| | PATIENT | EAGER |
+|---|---|---|
+| evaluations | 22 | 22 — **identical sequences** (22 shared, 0 unique) |
+| full-fit equivalents | 5.17 | 5.17 |
+| wall-clock | 512.0 s | 475.0 s |
+| **P/E wall-clock ratio** | | **1.078** |
+| summed fit work | 1378.8 s | 1301.6 s (sum ratio 0.944×) |
+| best point | (4, 130, 17) | (4, 130, 17) |
+| best CV MAE | **805.038** | **805.038** |
+| zones used (rows) | 4,185 and 418,416 | 4,185 and 418,416 |
+
+**Finding: the 1% rung held too — fourth win in a row.** Both policies again
+found the historical optimum (805.038) at **5.17 full-fit equivalents**, a
+new low, beating Experiment 8's 5.43. `stratified_order` reports 418,416
+rows / 418,416 runs on this dataset (§ discussion above) — every rung is
+effectively a systematic full-timeline sample regardless of size, which is
+almost certainly *why* this keeps working: an evenly-spread 1% sample is
+still a faithful miniature of the whole year, just sparser. This also
+explains why the streak might not break from *shrinking the rung further*
+on this dataset — the failure mode demonstrated in Experiment 6 was about a
+sample being unrepresentative in *time* (expanding's oldest-N%-only), not
+about sample *size* per se.
+
+Complete progression across four stratified-sampling starting-zone tests:
+
+| starting zone | full-fit equiv (P) | best MAE |
+|---|---|---|
+| 10% (defaults before 2026-07-15) | 6.80 | 805.730 |
+| 5% (Experiment 7) | 5.85 | 805.038 |
+| 2.5% (Experiment 8) | 5.43 | 805.038 |
+| 1% (Experiment 9) | **5.17** | **805.038** |
+
+Still monotone, still no failure. Given the likely explanation above (every
+rung is systematic-in-time regardless of size, so shrinking it mostly just
+saves rows without hurting representativeness), the more diagnostic next
+experiment is probably not "push the % lower" but testing whether
+`subsample_columns` narrowed to genuinely categorical columns (producing
+real multi-row runs instead of the current 1.0-rows/run degenerate case)
+changes this picture at all — see the discussion above this table.
 
 ---
 
