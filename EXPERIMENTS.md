@@ -536,7 +536,34 @@ essentially the same store coverage as `stratified` (600–601 of 601 in both
 cases).** The demonstrated win in this log has been "anything except
 `expanding`'s contiguous-block sampling beats `expanding`," not "`stratified`
 beats random." Pushed to more extreme fractions to find where the
-deterministic design actually separates from random:
+deterministic design actually separates from random.
+
+**Why this test:** the 1%–10% table above only proves `stratified` beats
+`expanding`; it doesn't prove `stratified` earns its more elaborate design
+over plain random sampling, since both already achieve near-total store
+coverage in that range. The open question was whether `stratified`'s
+low-discrepancy guarantee is doing any real work, or whether it's
+redundant with random at every fraction that matters. Answering that
+requires finding a fraction small enough for random sampling's luck-based
+coverage to actually start failing, and checking whether `stratified`
+still holds there.
+
+**How it was measured** (side-analysis script, not a `PatternSearchCV`
+search run — this isolates the sampling mechanism's coverage property in
+a few seconds, rather than paying for a full search per data point):
+1. Ran the real data pipeline (`train.csv` → int64→int32 → category
+   codes → the same five dropped weather columns → 80/20 split) to get
+   the training portion: 418,416 rows, 601 distinct stores.
+2. Called the actual library function, `pattern_search_cv._sampling
+   .stratified_order(X)` — not a reimplementation — to get the real
+   priority order the package would use.
+3. For each fraction `f`, took `k = ceil(f * n)` rows: the top-`k` of the
+   real `stratified_order` output, and separately `np.random.RandomState
+   (seed).choice(n, size=k, replace=False)` for 20 independent seeds
+   (0–19).
+4. Store coverage = `len(np.unique(store_ids[selected_rows]))` for each
+   draw. Reported the `stratified` count (deterministic, one number), the
+   mean across the 20 random seeds, and the single worst (minimum) seed.
 
 | fraction | rows | `stratified` stores | random avg (20 seeds) | random worst seed |
 |---|---|---|---|---|
@@ -550,7 +577,8 @@ at 0.1%) — this is the low-discrepancy (Van der Corput/bit-reversal)
 property doing genuine, provable work: it *guarantees* even spread at every
 prefix length rather than relying on random luck, which starts to matter
 once the sample is small enough that luck can fail. No search has yet been
-run in that regime (Experiments 6–9 stopped at 1%).
+run in that regime (Experiments 6–9 stopped at 1%); this table predicts
+what such a search would show but doesn't replace it.
 
 One more precision: at the 1% fraction actually used in Experiment 9, the
 sample doesn't just touch every store — rows-per-store distribution is
