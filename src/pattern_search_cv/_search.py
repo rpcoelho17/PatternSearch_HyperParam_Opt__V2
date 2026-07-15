@@ -26,7 +26,7 @@ from ._space import Space
 
 logger = logging.getLogger("pattern_search_cv")
 
-_DEFAULT_ZONES = (0.10, 0.20, 0.50, 1.0)
+_DEFAULT_ZONES = (0.05, 0.10, 0.20, 1.0)
 
 
 class PatternSearchCV(BaseSearchCV):
@@ -39,37 +39,61 @@ class PatternSearchCV(BaseSearchCV):
     param_grid : dict
         Maps parameter names to either an explicit list of values or a
         ``(low, high, num)`` tuple expanded to a linspace grid.
-    poll : {"auto", "complete", "opportunistic"}, default="auto"
+    poll : {"auto", "complete", "opportunistic"}, default="opportunistic"
         Exploratory sweep mode.  "complete" evaluates all +/-delta probes
         around the fixed center in one parallel batch (MATLAB UseCompletePoll)
         plus the composite of improving dimensions; "opportunistic" is the
         classic 1961 sequential sweep with immediate acceptance.  "auto" picks
-        "complete" when ``n_jobs / n_splits >= 2``.
+        "complete" when ``n_jobs / n_splits >= 2``, else "opportunistic".
+        CAVEAT: the "opportunistic" default was chosen because it is what
+        "auto" resolved to on every machine this package has been benchmarked
+        on (5-fold CV, <=8 cores); "complete" poll has never actually been
+        measured.  If you have many more cores than CV folds, "auto" (or
+        explicit "complete") may parallelize better - this has not been
+        verified either way.
     mesh_expansion : float, default=1.0
         Step-size multiplier applied after a successful sweep.  1.0 (default)
         is classic Hooke-Jeeves (contraction only); 2.0 matches MATLAB GPS.
         Raise it on fine, continuous-like grids.
-    contraction : {"patient", "eager"}, default="patient"
+    contraction : {"patient", "eager"}, default="eager"
         When the mesh contracts.  "patient" (classic Hooke-Jeeves): only after
-        a failed exploratory sweep.  "eager" (prototype-faithful): a failed
-        pattern move also contracts, spending step resolution faster at the
-        risk of premature convergence on rugged landscapes.  In a controlled
-        single-variable test on the retail benchmark the two policies were
-        cost-neutral (24 vs 23 evaluations, identical optimum) - any benefit
-        is landscape-dependent.  If using "eager", pair with n_starts > 1 to
-        hedge the premature-convergence risk.
-    data_zones : int or sequence of float, default=(0.10, 0.20, 0.50, 1.0)
+        a failed exploratory sweep.  "eager" (prototype-faithful, default): a
+        failed pattern move also contracts, spending step resolution faster.
+        CAVEAT: in every controlled single-variable test run on the retail
+        benchmark (three separate experiments), "eager" measured cost-neutral
+        to slightly worse than "patient" on full-fit equivalents (e.g. 6.90 vs
+        6.80; byte-identical evaluation sequences in two other runs) - there
+        is no measured compute advantage to this default, and "eager" carries
+        a real (untested-on-rugged-landscapes) premature-convergence risk that
+        "patient" does not.  It was made default by explicit user decision,
+        not by benchmark evidence.  Consider "patient" if you hit poor optima
+        on a landscape with many local structures; pair "eager" with
+        n_starts > 1 to hedge the risk.
+    data_zones : int or sequence of float, default=(0.05, 0.10, 0.20, 1.0)
         The data ladder.  An int n gives n evenly divided levels
         (``4 -> [0.25, 0.5, 0.75, 1.0]``); a sequence gives explicit ascending
-        fractions ending at 1.0; ``1`` disables multi-fidelity.
+        fractions ending at 1.0; ``1`` disables multi-fidelity.  This
+        front-loaded, aggressive-start ladder was set as the default after it
+        strictly dominated the previous default (0.10, 0.20, 0.50, 1.0) on the
+        retail benchmark - better optimum, less compute (5.85 vs 6.80 full-fit
+        equivalents), and faster wall-clock - when paired with
+        ``subsample="stratified"``.  Evidence is from one dataset/grid; a 5%
+        starting zone risks an unrepresentative sample on data where
+        ``subsample`` cannot make small rungs faithful (see ``subsample``).
     warmup : int, default=3
         Number of positions (starting point included) before the bullseye
         rings self-calibrate.  The patience dial: higher = data is added
         closer to the optimum.  Minimum 3 (two displacement readings).
     subsample : {"auto", "expanding", "stratified", "random"}, default="auto"
         How the data-zone priority ordering is built.  "auto" picks
-        "expanding" for time-ordered splitters (TimeSeriesSplit), else
-        "random".  "random" on temporal data leaks future rows - see docs.
+        "stratified" for time-ordered splitters (TimeSeriesSplit), else
+        "random".  "stratified" (the transition sampler) measurably beat
+        "expanding" on the retail benchmark's aggressive 5% starting zone
+        (lower MAE, less compute, faster wall-clock) and is fail-soft by
+        design (degrades to systematic sampling in the worst case), which is
+        why it is now the time-series default instead of "expanding".
+        "expanding" remains available explicitly.  "random" on temporal data
+        leaks future rows - see docs.
     subsample_columns : sequence of int, optional
         Column subset watched by the "stratified" transition sampler.
     n_starts : int, default=1
@@ -98,7 +122,7 @@ class PatternSearchCV(BaseSearchCV):
                  refit=True, cv=None, verbose=0, random_state=None,
                  pre_dispatch="2*n_jobs", error_score=np.nan,
                  return_train_score=False,
-                 poll="auto", mesh_expansion=1.0, contraction="patient",
+                 poll="opportunistic", mesh_expansion=1.0, contraction="eager",
                  data_zones=_DEFAULT_ZONES, warmup=3,
                  subsample="auto", subsample_columns=None,
                  n_starts=1, start_points=None):
@@ -247,7 +271,7 @@ class PatternSearchCV(BaseSearchCV):
         mode = self.subsample
         if mode == "auto":
             cv_name = type(self.cv).__name__ if self.cv is not None else ""
-            mode = "expanding" if "TimeSeries" in cv_name else "random"
+            mode = "stratified" if "TimeSeries" in cv_name else "random"
         if mode == "expanding":
             order = expanding_order(n_samples)
         elif mode == "random":

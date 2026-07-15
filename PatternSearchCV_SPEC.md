@@ -46,22 +46,43 @@ PatternSearchCV(
     error_score=np.nan,
     return_train_score=False,
     # --- pattern search ---
-    poll="auto",                 # "auto" | "complete" | "opportunistic"
+    poll="opportunistic",        # "auto" | "complete" | "opportunistic" (default
+                                 #  changed 2026-07-15 by explicit decision, NOT
+                                 #  benchmark evidence: "auto" always resolved to
+                                 #  "opportunistic" on the <=8-core machines this
+                                 #  package has been tested on; "complete" poll has
+                                 #  never been measured. "auto" restores adaptivity.
     mesh_expansion=1.0,          # 1.0 = off (default); 2.0 = MATLAB GPS parity
-    contraction="patient",       # "patient" = classic HJ (contract only on failed
+    contraction="eager",         # "patient" = classic HJ (contract only on failed
                                  #  sweeps); "eager" = prototype-faithful (failed
-                                 #  pattern moves also contract). Controlled test:
-                                 #  cost-neutral on the retail benchmark (24 vs 23
-                                 #  evals, same optimum) — benefit is landscape-
-                                 #  dependent; premature-convergence risk remains.
-                                 #  See EXPERIMENTS.md Experiment 5.
+                                 #  pattern moves also contract), default since
+                                 #  2026-07-15 by explicit decision, NOT benchmark
+                                 #  evidence: three controlled tests (Experiments
+                                 #  5-7) measured "eager" cost-neutral to slightly
+                                 #  worse than "patient" (e.g. 6.90 vs 6.80 equiv;
+                                 #  byte-identical eval sequences twice), with no
+                                 #  measured compute advantage and an untested
+                                 #  premature-convergence risk "patient" doesn't
+                                 #  carry. Pair with n_starts>1 to hedge the risk.
+                                 #  See EXPERIMENTS.md Experiments 5-7.
     # --- multi-fidelity ---
-    data_zones=(0.10, 0.20, 0.50, 1.0),  # int n -> n even levels (4 -> [.25,.5,.75,1]);
+    data_zones=(0.05, 0.10, 0.20, 1.0),  # int n -> n even levels (4 -> [.25,.5,.75,1]);
                                  #  or explicit ascending values ending in 1.0 for
-                                 #  uneven ladders; 1 disables the ladder
+                                 #  uneven ladders; 1 disables the ladder. Changed
+                                 #  from (0.10,0.20,0.50,1.0) 2026-07-15: strictly
+                                 #  dominated the old default on the retail
+                                 #  benchmark (better optimum, less compute, faster
+                                 #  wall-clock) when paired with subsample=
+                                 #  "stratified". Evidence: one dataset/grid.
+                                 #  See EXPERIMENTS.md Experiment 7 seven-way table.
     warmup=3,                    # best-updates before rings calibrate; higher = data
                                  #  added closer to the optimum (the "patience dial")
-    subsample="auto",            # "auto" | "expanding" | "stratified" | "random"
+    subsample="auto",            # "auto" | "expanding" | "stratified" | "random".
+                                 #  "auto" now resolves time-ordered CV to
+                                 #  "stratified" (was "expanding" before 2026-07-15):
+                                 #  stratified measurably beat expanding on the
+                                 #  aggressive 5% starting zone and is fail-soft by
+                                 #  design. "expanding" remains available explicitly.
     subsample_columns=None,      # optional column subset for "stratified"
     # --- multi-start ---
     n_starts=1,
@@ -214,11 +235,18 @@ Active by default, **including `n_starts=1`**. `data_zones=1` disables it.
 
 `data_zones` accepts an int — n evenly divided levels, e.g. `4 -> [0.25, 0.5, 0.75, 1.0]`,
 `3 -> [1/3, 2/3, 1.0]` — or explicit ascending values ending in 1.0 for uneven ladders.
-**Default: `(0.10, 0.20, 0.50, 1.0)`** — front-loaded cheap zones for the probe-heavy
-early phases, and only four levels because measured searches make ~3–5 best-moves total
-(§ warm-up rationale): more levels than moves would never be traversed. Validation:
-int >= 1, or values in (0, 1], strictly ascending, last element 1.0. (Default is a tuple
-only because sklearn convention forbids mutable default arguments; lists are accepted.)
+**Default: `(0.05, 0.10, 0.20, 1.0)`** (changed 2026-07-15 from `(0.10, 0.20, 0.50, 1.0)`)
+— front-loaded cheap zones for the probe-heavy early phases, and only four levels because
+measured searches make ~3–5 best-moves total (§ warm-up rationale): more levels than moves
+would never be traversed. The more aggressive 5% starting zone was adopted after it
+strictly dominated the previous default on the retail benchmark (better optimum, less
+compute, faster wall-clock) when paired with `subsample="stratified"` — see
+EXPERIMENTS.md Experiment 7's seven-way table. Evidence is from a single dataset/grid;
+a 5% start risks an unrepresentative sample when `subsample` cannot make small rungs
+faithful (Experiment 6 showed exactly this failure mode with `subsample="expanding"`).
+Validation: int >= 1, or values in (0, 1], strictly ascending, last element 1.0.
+(Default is a tuple only because sklearn convention forbids mutable default arguments;
+lists are accepted.)
 
 ### 5.1 Mechanism
 
@@ -228,9 +256,9 @@ ladder; there is no trend/deceleration machinery — one speedometer reading, on
 
 | Latest `best`-to-`best` displacement (normalized) | Fraction (default zones) |
 |---|---|
-| above ring boundary 1 (striding / traveling) | 0.10 |
-| below boundary 1 | 0.20 |
-| below boundary 2 | 0.50 |
+| above ring boundary 1 (striding / traveling) | 0.05 |
+| below boundary 1 | 0.10 |
+| below boundary 2 | 0.20 |
 | below boundary 3 (endgame-scale moves) | 1.00 |
 
 Rules:
@@ -307,8 +335,12 @@ Modes (`subsample=`):
 - **`"random"`** — uniform row sampling for i.i.d. data (sklearn-halving-standard).
   Docs carry an explicit leakage warning against using it on temporal data.
   (Possible v2 refinement: stratify by class for classification.)
-- **`"auto"`** — `"expanding"` when `cv` is time-ordered (`TimeSeriesSplit`),
-  else `"random"`. `"stratified"` is opt-in.
+- **`"auto"`** — `"stratified"` when `cv` is time-ordered (`TimeSeriesSplit`),
+  else `"random"`. (Changed 2026-07-15 from `"expanding"`: Experiment 7 showed
+  `"stratified"` measurably beats `"expanding"` on the retail benchmark's
+  aggressive 5% starting zone — lower MAE, less compute, faster wall-clock —
+  and it is fail-soft by design (§5.2), so it is now the safer time-series
+  default. `"expanding"` remains available explicitly.)
 
 ---
 

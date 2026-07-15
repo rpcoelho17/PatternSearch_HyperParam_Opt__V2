@@ -146,10 +146,26 @@ def test_start_points_take_seats(data):
     assert first["params"] == {"max_depth": 2, "min_samples_leaf": 16}
 
 
-def test_time_series_auto_uses_expanding(data):
+def test_time_series_auto_uses_stratified(data):
     X, y = data
     search = make_search(cv=TimeSeriesSplit(n_splits=3)).fit(X, y)
-    assert search.best_params_  # smoke: expanding path exercised
+    assert search.best_params_  # smoke: stratified path exercised
+
+
+def test_time_series_auto_can_still_reach_expanding_explicitly(data):
+    X, y = data
+    search = make_search(cv=TimeSeriesSplit(n_splits=3),
+                         subsample="expanding").fit(X, y)
+    assert search.best_params_  # "auto" moved off expanding; explicit still works
+
+
+def test_defaults_are_eager_opportunistic_and_new_zones():
+    search = PatternSearchCV(DecisionTreeRegressor(random_state=0), GRID)
+    params = search.get_params()
+    assert params["contraction"] == "eager"
+    assert params["poll"] == "opportunistic"
+    assert tuple(params["data_zones"]) == (0.05, 0.10, 0.20, 1.0)
+    assert params["subsample"] == "auto"
 
 
 def test_refit_false(data):
