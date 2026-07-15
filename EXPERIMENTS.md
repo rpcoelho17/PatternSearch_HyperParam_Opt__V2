@@ -538,15 +538,15 @@ cases).** The demonstrated win in this log has been "anything except
 beats random." Pushed to more extreme fractions to find where the
 deterministic design actually separates from random.
 
-**Why this test:** the 1%–10% table above only proves `stratified` beats
-`expanding`; it doesn't prove `stratified` earns its more elaborate design
-over plain random sampling, since both already achieve near-total store
-coverage in that range. The open question was whether `stratified`'s
-low-discrepancy guarantee is doing any real work, or whether it's
-redundant with random at every fraction that matters. Answering that
-requires finding a fraction small enough for random sampling's luck-based
-coverage to actually start failing, and checking whether `stratified`
-still holds there.
+**Reasoning for this test:** at 1%–10% `stratified` and true random tie on
+store coverage (600–601 of 601 both ways) — which meant, at the fractions
+actually used so far, it looked suspiciously like plain random sampling
+would have done just as well, and `stratified`'s more elaborate
+low-discrepancy design wasn't earning its keep over something far simpler.
+Rather than accept that, the next move was to push to smaller fractions and
+see whether the "smart" mechanism actually separates from random anywhere
+— i.e. find the point where random's coverage starts failing by luck and
+check whether `stratified`'s guarantee holds there instead.
 
 **How it was measured** (side-analysis script, not a `PatternSearchCV`
 search run — this isolates the sampling mechanism's coverage property in
