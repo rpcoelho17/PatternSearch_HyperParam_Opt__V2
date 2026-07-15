@@ -256,13 +256,23 @@ Also first exercise of a 4-zone ladder starting at 5% (~20.9K rows).
 **Finding 1 — the 135 s question is answered: machine fluctuation.** On this
 ladder the two policies happened to produce *byte-identical* evaluation
 sequences (no divergence event on this path), i.e. two runs of the exact same
-workload — yet wall-clocks differed by 217 s (14%), this time with eager
-*slower*, and the shared-evaluation fit-time ratio shows identical fits taking
-median 1.23× longer in the second run. The machine drifts ±15–25% between
-back-to-back runs. Conclusion: Experiment 5's 135 s eager advantage was the
-machine, not the policy; the docstring's "cost-neutral" stands, now with
-controlled evidence. Any future wall-clock claim on this box requires repeats
-or fit-work instrumentation.
+workload — yet wall-clocks differed by 217 s (14%: 1769.4 vs 1552.3 s), this
+time with eager *slower*. The **sum of fit-work over the 24 shared
+evaluations** (the metric consistent with wall-clock — see the correction
+below) was 5091.3 s vs 4422.9 s, a **1.15× ratio**, matching the wall-clock
+gap. The machine drifted ~15% between these two back-to-back runs. Conclusion:
+Experiment 5's 135 s eager advantage was the machine, not the policy; the
+docstring's "cost-neutral" stands, now with controlled evidence. Any future
+wall-clock claim on this box requires repeats or fit-work instrumentation.
+
+*Correction (2026-07-14): the notebook also prints a "median of per-evaluation
+fit-time ratios" (1.23× here, 1.16× in Experiment 7). That statistic is
+unreliable and should be disregarded — it is dominated by the many cheap
+5%-data evaluations, where tiny absolute fit times make small noise look like
+large percentage swings, and in Experiment 7 it pointed the opposite direction
+from the actual wall-clock outcome. The **sum-based ratio** used above (total
+shared fit-work, eager ÷ patient) is the metric that stays consistent with
+wall-clock direction and is used throughout this log going forward.*
 
 **Finding 2 — the 5% rung is below this dataset's reliability floor.** The
 [5, 10, 20, 100] ladder found a *worse* optimum — (4, 230, 17), MAE 815.373,
@@ -323,10 +333,15 @@ that `subsample='stratified'` is not just "different" but a genuine
 improvement over `'expanding'` on this dataset, particularly at aggressive
 (low) starting fractions where sample faithfulness matters most.
 
-Machine-noise note: P/E wall-clocks were close (599.7 vs 576.6 s) with the
-fit-time ratio again showing ~1.16-1.17x drift between the two runs — smaller
-than Experiment 6's 1.23x but consistent with the same noise floor, not a
-policy effect.
+Machine-noise note (corrected 2026-07-14): P/E wall-clocks were close (599.7
+vs 576.6 s, eager 4% *faster*). Sum-based fit-work over the 22 shared
+evaluations was 1594.2 vs 1559.8 s — eager only 1.02× patient, i.e. ~2% more
+total computation despite finishing sooner. Wall-clock and fit-work disagree
+on direction here, both by small margins — the honest read is that P and E
+are statistically indistinguishable in this run, well inside the noise floor
+Experiment 6 established (~15%). (The notebook's separate "median of
+per-evaluation ratios" line, 1.16×, is the unreliable statistic flagged in
+Experiment 6's correction and should be ignored.)
 
 ---
 
