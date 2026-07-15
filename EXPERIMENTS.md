@@ -248,6 +248,7 @@ Also first exercise of a 4-zone ladder starting at 5% (~20.9K rows).
 | evaluations | 24 | 24 — **identical sequences** (24 shared, 0 unique) |
 | full-fit equivalents | 9.75 | 9.75 |
 | wall-clock | 1552.3 s | 1769.4 s |
+| **P/E wall-clock ratio** | | **0.877** |
 | summed fit work | 4422.9 s | 5091.3 s |
 | best point | (4, 230, 17) | (4, 230, 17) |
 | best CV MAE | 815.373 | 815.373 |
@@ -308,6 +309,7 @@ seasons represented, unlike expanding's oldest-first prefix).
 | evaluations | 22 | 22 — **identical sequences** (22 shared, 0 unique) |
 | full-fit equivalents | 5.85 | 5.85 |
 | wall-clock | 599.7 s | 576.6 s |
+| **P/E wall-clock ratio** | | **1.040** |
 | summed fit work | 1559.8 s | 1594.2 s |
 | best point | **(4, 130, 17)** | **(4, 130, 17)** |
 | best CV MAE | **805.038** | **805.038** |
