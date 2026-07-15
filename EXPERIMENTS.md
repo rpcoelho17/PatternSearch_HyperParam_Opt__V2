@@ -461,6 +461,120 @@ novel-seat logic this sampler was built for.
 
 ---
 
+## MAJOR FINDING — the CV split is store-based, not date-based (2026-07-15)
+
+Triggered by a user question ("do the selected rows respect the time
+sequence?") that led to checking whether row-index actually tracks calendar
+time globally. It does not, and this reframes how every experiment in this
+log up to this point should be read.
+
+**Verified structural facts about `train.csv`:**
+
+- The CSV is sorted by **`StoreID` first, then `Date` within each store's
+  block** — not by date across the whole file. Confirmed: `StoreID` is
+  monotonically non-decreasing row-by-row; `Date` is not.
+- 749 distinct stores total; ~696 rows per store (≈ 2 years of near-daily
+  data) — each store's own block already spans nearly the *entire*
+  2016-03-01 to 2018-02-28 range on its own.
+- Consequence: **the "chronological" 80/20 split is actually a store
+  split.** Training rows (first 80%, 418,416 rows) contain **601 distinct
+  stores**; validation rows (last 20%) contain **149**, of which **148 have
+  never appeared in training at all**. Both the training and validation
+  portions span the *identical* full date range — there is no temporal
+  holdout happening at the whole-dataset level.
+- Consequence: **`TimeSeriesSplit(n_splits=5)`, applied to this file, is
+  performing a store-group split, not a temporal split.** Verified directly:
+  every fold's train and test rows cover the exact same date range
+  (2016-03-01 to 2018-02-28 in all 5 folds); each fold trains on an
+  increasing number of stores (100 → 200 → 300 → 399 → 499) and tests on a
+  disjoint block of ~100 *different* stores, with only ~1 store (~1%)
+  overlapping between any fold's train and test sets.
+
+**What this means:** every design decision and docstring claim in this
+project framed around "TimeSeriesSplit," "chronological order," and
+"avoiding leakage" (the `subsample` parameter's leakage warning, the
+`"auto"` resolution picking `"expanding"`/now `"stratified"` "for
+time-ordered splitters") was reasoning about the wrong risk. The actual
+generalization question `TimeSeriesSplit` is measuring on this dataset is
+**"do hyperparameters tuned on one set of stores generalize to a different,
+non-overlapping set of stores"** — a cross-store generalization problem
+wearing a time-series CV's clothes. There is little classical temporal
+leakage risk to avoid (train and test already share the same date range in
+every fold); the real risk `expanding` walks straight into is *store*
+leakage/undercoverage, not date leakage. Not yet corrected in code/docs —
+logged for discussion before deciding whether to (a) keep the current setup
+but correct the documentation to describe it accurately, (b) re-sort the
+pipeline by `Date` globally so `TimeSeriesSplit` does what its name
+promises and re-run the key experiments, or (c) something else.
+
+---
+
+## Why stratified sampling has actually been winning (2026-07-15)
+
+Direct follow-up to the finding above: since row-index is store-block
+position, "spread evenly across row-index" means "spread across stores."
+Measured distinct-store coverage directly (601 stores total in the training
+portion) rather than assuming:
+
+| fraction | rows | `expanding` stores | `stratified` stores | true random (avg of 5 seeds) |
+|---|---|---|---|---|
+| 1% | 4,185 | **6** | **601** | 600.0 |
+| 2.5% | 10,461 | 15 | 601 | 601.0 |
+| 5% | 20,921 | 30 | 601 | 601.0 |
+| 10% | 41,842 | 60 | 601 | 601.0 |
+
+**This fully explains Experiment 6's `expanding` failure**: at 1% it sees 6
+of 601 stores — the search tunes against one small handful of stores and
+generalizes badly to the ~99% of stores it never saw. It also fully explains
+why `stratified` has been winning: its bit-reversed pick order spreads
+evenly across row-index by construction, which — since row-index is store
+identity here — delivers near-total store coverage even at tiny fractions.
+
+**Important caveat, also measured, not assumed: at 1%–10% (the fractions
+Experiments 6–9 actually used), true random sampling would have achieved
+essentially the same store coverage as `stratified` (600–601 of 601 in both
+cases).** The demonstrated win in this log has been "anything except
+`expanding`'s contiguous-block sampling beats `expanding`," not "`stratified`
+beats random." Pushed to more extreme fractions to find where the
+deterministic design actually separates from random:
+
+| fraction | rows | `stratified` stores | random avg (20 seeds) | random worst seed |
+|---|---|---|---|---|
+| 0.1% | 419 | **415** | 301.9 | 293 |
+| 0.2% | 837 | **601** | 448.1 | 433 |
+| 0.5% | 2,093 | **601** | 581.8 | 574 |
+| 1.0% | 4,185 | 601 | 600.0 | 597 |
+
+**Below ~0.5%, `stratified` decisively beats random** (415 vs. ~302 stores
+at 0.1%) — this is the low-discrepancy (Van der Corput/bit-reversal)
+property doing genuine, provable work: it *guarantees* even spread at every
+prefix length rather than relying on random luck, which starts to matter
+once the sample is small enough that luck can fail. No search has yet been
+run in that regime (Experiments 6–9 stopped at 1%).
+
+One more precision: at the 1% fraction actually used in Experiment 9, the
+sample doesn't just touch every store — rows-per-store distribution is
+min=2, max=9, mean=6.96, with **zero stores represented by only a single
+row**. Coverage is balanced, not just technically present.
+
+**Implications / open decisions for discussion:**
+1. The `expanding` vs. `stratified` comparison (Experiments 6–7) demonstrates
+   "avoid catastrophic store undercoverage," not necessarily "stratified's
+   transition-detection logic adds value" — that logic has never actually
+   fired on this dataset (see the methodology note above: run length is
+   always 1 here).
+2. `subsample="random"` has never been benchmarked in an actual P/E search
+   run on this dataset, despite the leakage-avoidance rationale for skipping
+   it no longer clearly applying now that the CV is understood to be
+   store-based rather than date-based. The store-coverage numbers above
+   predict it would tie `stratified` at 1%+ and lose below ~0.5%.
+3. A genuinely diagnostic next experiment is a P/E search run at 0.1%–0.2%,
+   where `stratified` should pull ahead of both `expanding` and `random` for
+   the first time in an actual search (not just a coverage-counting
+   side-analysis).
+
+---
+
 ## Experiment 9 — Patient/Eager, zones [1%, 5%, 10%, 100%], verbose=0 (2026-07-15, done)
 
 Notebook: `PE_Round_1_5_10_100.ipynb`. Continuing the starting-zone
@@ -516,9 +630,22 @@ changes this picture at all — see the discussion above this table.
 
 ## Open questions queued for future experiments
 
-- `subsample='stratified'` (transition sampling) vs `'expanding'` on this dataset —
-  does a full-timeline 10% sample find the basin faster/more reliably than the
-  oldest-tenth sample? (Signature feature of the package; article figure.)
+- ~~`subsample='stratified'` vs `'expanding'` on this dataset~~ — **answered**
+  (Experiment 7 measured the win; the store-coverage sections above explain
+  the mechanism precisely).
+- **[pending decision]** How to treat the store-based-not-date-based CV
+  finding: correct the documentation to describe it accurately, re-sort the
+  pipeline by `Date` globally and re-run key experiments, or something else.
+- **[new]** `subsample='random'` has never been run in an actual P/E search
+  on this dataset — predicted to tie `stratified` at 1%+ per the store-
+  coverage numbers, and to lose below ~0.5%. Worth adding as a comparison arm.
+- **[new]** A P/E search at 0.1%–0.2% starting zone, where `stratified` is
+  predicted to finally separate from both `expanding` and `random` in an
+  actual search outcome, not just a coverage count.
+- **[new]** `subsample_columns` narrowed to genuinely categorical columns
+  (excluding all weather), to produce real multi-row runs and exercise the
+  sampler's designed boundary/midpoint/novel-seat logic, which has never
+  fired on this dataset (see the sampler methodology note above).
 - `n_starts ∈ {1, 2, 4, 8}` at same budget and same wall-clock (multi-start ablation).
 - `poll='complete'` on this 8-core machine (expected ~neutral single-start; relevant
   with multi-start batching).
