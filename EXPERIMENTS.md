@@ -277,6 +277,59 @@ the 5% start on both cost and answer. (Also an argument for testing
 
 ---
 
+## Experiment 7 — Stratified sampling P/E round, zones [0.05, 0.10, 0.20, 1.0] (running)
+
+Notebook: `PE_Stratified_5_10_20_100.ipynb`. Identical to Experiment 6 in every
+respect (P then E, same ladder, seed, grid, MAE, fit-time instrumentation)
+except `subsample="stratified"` — the transition sampler — instead of the
+expanding window. Question under test: Experiment 6 showed the expanding 5%
+rung (oldest ~5 weeks) misleads the search to (4, 230, 17) / MAE 815.373 at
+9.75 equivalents; does a full-timeline 5% sample restore the
+(4, 150, 17) / 805.730 optimum? This is the transition sampler's first outing
+on real data — note that with continuous weather columns among the 30 watched
+features, most rows are transitions, so the sampler is expected to operate
+near its designed degenerate mode: systematic full-timeline sampling (all
+seasons represented, unlike expanding's oldest-first prefix).
+
+**Results**
+
+| | PATIENT | EAGER |
+|---|---|---|
+| evaluations | 22 | 22 — **identical sequences** (22 shared, 0 unique) |
+| full-fit equivalents | 5.85 | 5.85 |
+| wall-clock | 599.7 s | 576.6 s |
+| summed fit work | 1559.8 s | 1594.2 s |
+| best point | **(4, 130, 17)** | **(4, 130, 17)** |
+| best CV MAE | **805.038** | **805.038** |
+| zones used | 5% and 100% | 5% and 100% |
+
+**Stratified vs expanding — direct answer: stratified wins decisively.**
+
+| | Expanding (Exp. 6) | Stratified (Exp. 7) |
+|---|---|---|
+| best MAE | 815.373 | **805.038 — 1.3% better; ties Run A/prototype's historical optimum** |
+| best point | (4, 230, 17) | (4, 130, 17) |
+| full-fit equivalents | 9.75 | **5.85 — 40% less compute** |
+| wall-clock (P+E combined) | 3321.7 s | **1176.3 s — 65% faster** |
+
+The oldest-5-weeks expanding sample misled the search into a worse
+n_estimators region and then paid ~9 full-price evaluations trying to refine
+around it. The full-timeline stratified sample gave the 5% rung a landscape
+faithful enough to find the right basin immediately — fewer evaluations,
+cheaper evaluations, and a *better* answer, matching the best MAE found
+anywhere in this log (Run A / the V1 prototype's recorded optimum, on this
+metric equivalent to (4,150,17)'s R² twin). This is the clearest evidence yet
+that `subsample='stratified'` is not just "different" but a genuine
+improvement over `'expanding'` on this dataset, particularly at aggressive
+(low) starting fractions where sample faithfulness matters most.
+
+Machine-noise note: P/E wall-clocks were close (599.7 vs 576.6 s) with the
+fit-time ratio again showing ~1.16-1.17x drift between the two runs — smaller
+than Experiment 6's 1.23x but consistent with the same noise floor, not a
+policy effect.
+
+---
+
 ## Open questions queued for future experiments
 
 - `subsample='stratified'` (transition sampling) vs `'expanding'` on this dataset —
