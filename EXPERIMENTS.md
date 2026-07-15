@@ -707,6 +707,59 @@ comparison arm already queued below to see where random sampling — not
 
 ---
 
+## Experiment 11 — Patient/Eager, zones [0.25%, 1%, 10%, 100%], verbose=0 (2026-07-15, done)
+
+Notebook: `PE_Round_0.25_1_10_100.ipynb`. Skips straight to a 0.25% starting
+zone (~1,046 rows) — between the store-coverage side-analysis's 0.2%
+(601/601 stores, full coverage) and 0.1% (415/601, where `stratified` first
+pulled decisively ahead of random). Tests whether an actual search still
+holds up in that range, not just the coverage count. Same configuration as
+Experiment 10 otherwise.
+
+**Results**
+
+| | PATIENT | EAGER |
+|---|---|---|
+| evaluations | 22 | 22 — **identical sequences** (22 shared, 0 unique) |
+| full-fit equivalents | 5.04 | 5.04 |
+| wall-clock | 445.8 s | 469.7 s |
+| **P/E wall-clock ratio** | | **0.949** |
+| summed fit work | 1179.3 s | 1270.0 s (sum ratio 1.077×) |
+| best point | (4, 130, 17) | (4, 130, 17) |
+| best CV MAE | **805.038** | **805.038** |
+| zones used (rows) | 1,047 and 418,416 | 1,047 and 418,416 |
+
+**Finding: the 0.25% rung held — sixth win/tie in a row, new low.** Both
+policies again found the historical optimum (805.038) at **5.04 full-fit
+equivalents**, beating Experiment 10's 5.09. Notably, this rung is *inside*
+the 0.1–0.5% range where the coverage side-analysis showed `stratified`
+starting to separate from plain random (415 vs. ~302 stores at 0.1%) — this
+is the first actual search result, not just a coverage count, in that
+regime, and it still found the right basin.
+
+Complete progression across six stratified-sampling starting-zone tests:
+
+| starting zone | full-fit equiv (P) | best MAE |
+|---|---|---|
+| 10% (defaults before 2026-07-15) | 6.80 | 805.730 |
+| 5% (Experiment 7) | 5.85 | 805.038 |
+| 2.5% (Experiment 8) | 5.43 | 805.038 |
+| 1% (Experiment 9) | 5.17 | 805.038 |
+| 0.5% (Experiment 10) | 5.09 | 805.038 |
+| 0.25% (Experiment 11) | **5.04** | **805.038** |
+
+Savings per halving step: 0.95 → 0.42 → 0.26 → 0.08 → 0.05 — the curve has
+now clearly flattened; six consecutive rungs without a failure, and the
+remaining headroom is small. Given how little compute is left to save this
+way, the more informative next experiments are the ones already queued
+below (`subsample='random'` at these same fractions to see whether *it*
+finally fails where the coverage analysis predicted it would, and the
+`subsample_columns` test to exercise the sampler's un-triggered
+boundary/midpoint logic) rather than continuing to shrink this ladder
+further.
+
+---
+
 ## Open questions queued for future experiments
 
 - ~~`subsample='stratified'` vs `'expanding'` on this dataset~~ — **answered**
