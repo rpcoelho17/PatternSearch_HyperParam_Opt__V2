@@ -382,7 +382,43 @@ Question under test: does the 2.5% rung still find the right basin (à la
 Experiment 7's stratified 5% success), or is this below even the stratified
 sampler's reliability floor (à la Experiment 6's *expanding* 5% failure)?
 
-*(results pending — awaiting interactive run)*
+**Results**
+
+| | PATIENT | EAGER |
+|---|---|---|
+| evaluations | 22 | 22 — **identical sequences** (22 shared, 0 unique) |
+| full-fit equivalents | 5.43 | 5.43 |
+| wall-clock | 626.1 s | 649.9 s |
+| **P/E wall-clock ratio** | | **0.963** |
+| summed fit work | 1254.3 s | 1282.8 s (sum ratio 1.023×) |
+| best point | (4, 130, 17) | (4, 130, 17) |
+| best CV MAE | **805.038** | **805.038** |
+| zones used (rows) | 10,461 and 418,416 | 10,461 and 418,416 |
+
+**Finding: the 2.5% rung held.** Both policies found the historical optimum
+(805.038, matching Run A/V1-prototype and both Experiment 7 runs exactly) at
+5.43 full-fit equivalents — **the lowest compute cost recorded anywhere in
+this log**, beating Experiment 7's 5.85. Stratified sampling's reliability
+floor is at or below 2.5% on this dataset; it did not fail the way
+`expanding` failed at 5% in Experiment 6. Wall-clock: P/E ratio 0.963 (eager
+4% slower), sum-based fit-work ratio 1.023× (eager ~2% more total
+computation) — small and mutually consistent this time (both point the same
+direction, unlike Experiments 6/7), but still well inside the machine's
+established noise band.
+
+Progression across the three stratified-sampling starting-zone tests:
+
+| starting zone | full-fit equiv (P) | best MAE |
+|---|---|---|
+| 10% (defaults before 2026-07-15) | 6.80 | 805.730 |
+| 5% (Experiment 7) | 5.85 | 805.038 |
+| 2.5% (Experiment 8) | **5.43** | 805.038 |
+
+Monotone: smaller stratified starting zones have so far only helped on this
+dataset — lower cost, same-or-better answer, no failure yet. The natural
+next step is finding where this trend actually breaks (1%? 0.5%?), since
+every default-tuning decision so far has been "more aggressive won" and that
+can't continue indefinitely.
 
 ---
 
