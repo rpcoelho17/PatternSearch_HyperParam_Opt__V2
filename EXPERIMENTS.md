@@ -420,29 +420,44 @@ next step is finding where this trend actually breaks (1%? 0.5%?), since
 every default-tuning decision so far has been "more aggressive won" and that
 can't continue indefinitely.
 
-**Methodology note — what "stratified" is actually doing on this dataset
-(2026-07-15).** Every stratified run so far, including Experiments 7–9, has
-logged `stratified_order: 418,416 rows, 418,416 runs (1.0 rows/run avg)` —
-every single row is its own "run." `subsample` watches **all** feature
-columns by default, and this dataset carries several continuous daily
-weather columns (temperature, humidity, pressure, wind, precipitation, dew
-point) that essentially never repeat between consecutive rows. So even
-though `StoreID`/`IsOpen`/`HasPromotions`/etc. genuinely do repeat for many
-consecutive days, the moment any one of ~15 weather columns ticks — which
-happens almost every row — the whole row counts as a "transition." The
-sampler has therefore been running in its documented fail-soft degenerate
-mode this whole time: it collapses to **systematic full-timeline sampling**
-(evenly spread picks across the whole year, never just the oldest slice),
-not its designed behavior of prioritizing genuine categorical transitions
-over repeated "typical" rows. This is almost certainly *why* stratified
-keeps winning regardless of how small the rung gets (Experiments 7–9 below):
-an evenly-spread sample stays a faithful miniature of the whole year no
-matter how sparse, whereas `expanding`'s failure mode (Experiment 6) was
-about being unrepresentative in *time*, not about sample size. The
-sampler's actual signature mechanism (novel-combination seats, alternating
-boundary/midpoint priority) has not yet been exercised end-to-end on this
-dataset — that needs `subsample_columns` narrowed to genuinely categorical,
-slow-changing columns so real multi-row runs actually form.
+**Methodology note — what "stratified" is actually doing on this dataset,
+verified precisely (2026-07-15).** Every stratified run so far (Experiments
+7–9) logged `stratified_order: 418,416 rows, 418,416 runs (1.0 rows/run
+avg)`. Traced the exact mechanism directly against the algorithm's own logic
+(not inferred): **all 418,416 runs have length exactly 1** (confirmed
+programmatically — min/max/mean run length = 1), which means `mid == start`
+in every single run — boundary and midpoint are the literal same row, so the
+designed "alternate between boundary and midpoint" behavior has no two
+distinct rows to alternate between. Deeper: `subsample` watches all feature
+columns by default, including ~17 continuous daily weather readings
+(temperature, humidity, pressure, dew point, wind, precipitation) that
+essentially never repeat exactly between rows even after the prototype's
+5-column drop (§ discussion below on which columns are actually dropped).
+Because of this, **every run's start-row combination is also "novel"**
+(confirmed: 418,416 of 418,416 runs, 100%) — with continuous float columns
+in the mix, no two rows ever hash identically, so nothing is ever a repeat.
+
+The consequence for the algorithm's control flow (`_sampling.py`
+`stratified_order`): the *first* priority tier, "first-ever occurrence of
+each unique combination," already claims literally 100% of rows in one call
+— `_take(novel_rows)` where `novel_rows` is the full dataset — ordered via
+bit-reversed (Van der Corput-style) ranking, which spreads picks evenly
+across any prefix length. The "alternating boundary/midpoint" tier and the
+recursive-bisection-of-remaining-rows tier both then receive **zero**
+unclaimed rows and do nothing. So on this dataset, the entire sampler
+reduces to: **one bit-reversed permutation of the whole timeline**, full
+stop — a legitimate, well-spread systematic sample, but none of the tiered
+boundary/midpoint/novel-combination machinery the sampler was designed
+around is actually exercising anything beyond that single tier. This is
+almost certainly *why* stratified keeps winning regardless of how small the
+rung gets (Experiments 7–9 below): a bit-reversed sample stays evenly spread
+across the whole year no matter how sparse, whereas `expanding`'s failure
+mode (Experiment 6) was about being unrepresentative in *time*
+(oldest-N%-only), not about sample size. Testing `subsample_columns`
+narrowed to genuinely categorical, slow-changing columns (excluding all
+weather, not just the five already-dropped columns) is the only way to
+produce real multi-row runs and actually exercise the boundary/midpoint/
+novel-seat logic this sampler was built for.
 
 ---
 
