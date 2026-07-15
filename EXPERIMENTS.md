@@ -628,6 +628,57 @@ changes this picture at all — see the discussion above this table.
 
 ---
 
+## Experiment 10 — Patient/Eager, zones [0.5%, 1%, 10%, 100%], verbose=0 (2026-07-15, done)
+
+Notebook: `PE_Round_0.5_1_10_100.ipynb`. Continuing the starting-zone
+progression (10% → 5% → 2.5% → 1%, each a win or tie so far — Experiments
+7–9): does `subsample='stratified'` hold at an even more aggressive 0.5%
+starting zone (~2,092 rows)? Same configuration as Experiment 9 otherwise.
+
+**Results**
+
+| | PATIENT | EAGER |
+|---|---|---|
+| evaluations | 22 | 22 — **identical sequences** (22 shared, 0 unique) |
+| full-fit equivalents | 5.09 | 5.09 |
+| wall-clock | 443.8 s | 445.0 s |
+| **P/E wall-clock ratio** | | **0.997** |
+| summed fit work | 1178.8 s | 1224.0 s (sum ratio 1.038×) |
+| best point | (4, 130, 17) | (4, 130, 17) |
+| best CV MAE | **805.038** | **805.038** |
+| zones used (rows) | 2,093 and 418,416 | 2,093 and 418,416 |
+
+**Finding: the 0.5% rung held — fifth win in a row, new low.** Both
+policies again found the historical optimum (805.038) at **5.09 full-fit
+equivalents**, beating Experiment 9's 5.17. P and E wall-clocks are the
+closest of any round so far (ratio 0.997), consistent with the established
+noise-floor picture — no systematic direction across five rounds.
+
+Complete progression across five stratified-sampling starting-zone tests:
+
+| starting zone | full-fit equiv (P) | best MAE |
+|---|---|---|
+| 10% (defaults before 2026-07-15) | 6.80 | 805.730 |
+| 5% (Experiment 7) | 5.85 | 805.038 |
+| 2.5% (Experiment 8) | 5.43 | 805.038 |
+| 1% (Experiment 9) | 5.17 | 805.038 |
+| 0.5% (Experiment 10) | **5.09** | **805.038** |
+
+Still monotone, still no failure — five wins in a row now. Per the earlier
+"why stratified has actually been winning" analysis, this is expected: the
+low-discrepancy bit-reversed order guarantees near-uniform coverage at
+every prefix length, and the measured store-coverage numbers showed
+`stratified` still hitting 415 of 601 stores even at 0.1% — so 0.5% is
+comfortably inside its reliable range. The gains between rungs are also
+visibly shrinking (0.95 → 0.42 → 0.26 → 0.08 equivalents saved per halving
+step), suggesting the curve is flattening well before it breaks. Finding
+the actual failure point (if one exists above the resource floor) would
+need to go substantially lower than 0.5%, or use the `subsample='random'`
+comparison arm already queued below to see where random sampling — not
+`stratified` — finally fails.
+
+---
+
 ## Open questions queued for future experiments
 
 - ~~`subsample='stratified'` vs `'expanding'` on this dataset~~ — **answered**
