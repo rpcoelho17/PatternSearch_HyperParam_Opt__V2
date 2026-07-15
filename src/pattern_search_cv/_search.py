@@ -39,18 +39,17 @@ class PatternSearchCV(BaseSearchCV):
     param_grid : dict
         Maps parameter names to either an explicit list of values or a
         ``(low, high, num)`` tuple expanded to a linspace grid.
-    poll : {"auto", "complete", "opportunistic"}, default="opportunistic"
+    poll : {"auto", "complete", "opportunistic"}, default="auto"
         Exploratory sweep mode.  "complete" evaluates all +/-delta probes
         around the fixed center in one parallel batch (MATLAB UseCompletePoll)
         plus the composite of improving dimensions; "opportunistic" is the
         classic 1961 sequential sweep with immediate acceptance.  "auto" picks
-        "complete" when ``n_jobs / n_splits >= 2``, else "opportunistic".
-        CAVEAT: the "opportunistic" default was chosen because it is what
-        "auto" resolved to on every machine this package has been benchmarked
-        on (5-fold CV, <=8 cores); "complete" poll has never actually been
-        measured.  If you have many more cores than CV folds, "auto" (or
-        explicit "complete") may parallelize better - this has not been
-        verified either way.
+        "complete" when ``n_jobs / n_splits >= 2``, else "opportunistic" - on
+        every machine this package has been benchmarked on so far (5-fold CV,
+        <=8 cores) that resolves to "opportunistic", so "complete" poll has
+        not actually been measured, but "auto" keeps the adaptivity for users
+        with many more cores than CV folds instead of hardcoding a choice
+        that was never tested against.
     mesh_expansion : float, default=1.0
         Step-size multiplier applied after a successful sweep.  1.0 (default)
         is classic Hooke-Jeeves (contraction only); 2.0 matches MATLAB GPS.
@@ -122,7 +121,7 @@ class PatternSearchCV(BaseSearchCV):
                  refit=True, cv=None, verbose=0, random_state=None,
                  pre_dispatch="2*n_jobs", error_score=np.nan,
                  return_train_score=False,
-                 poll="opportunistic", mesh_expansion=1.0, contraction="eager",
+                 poll="auto", mesh_expansion=1.0, contraction="eager",
                  data_zones=_DEFAULT_ZONES, warmup=3,
                  subsample="auto", subsample_columns=None,
                  n_starts=1, start_points=None):

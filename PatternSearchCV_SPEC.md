@@ -46,12 +46,14 @@ PatternSearchCV(
     error_score=np.nan,
     return_train_score=False,
     # --- pattern search ---
-    poll="opportunistic",        # "auto" | "complete" | "opportunistic" (default
-                                 #  changed 2026-07-15 by explicit decision, NOT
-                                 #  benchmark evidence: "auto" always resolved to
-                                 #  "opportunistic" on the <=8-core machines this
-                                 #  package has been tested on; "complete" poll has
-                                 #  never been measured. "auto" restores adaptivity.
+    poll="auto",                 # "auto" | "complete" | "opportunistic". "auto"
+                                 #  has always resolved to "opportunistic" on the
+                                 #  <=8-core machines this package has been tested
+                                 #  on (so "complete" poll is still unmeasured),
+                                 #  but "auto" keeps the adaptivity for users with
+                                 #  more cores relative to CV folds - considered
+                                 #  and deliberately kept 2026-07-15 rather than
+                                 #  hardcoding a choice that was never tested.
     mesh_expansion=1.0,          # 1.0 = off (default); 2.0 = MATLAB GPS parity
     contraction="eager",         # "patient" = classic HJ (contract only on failed
                                  #  sweeps); "eager" = prototype-faithful (failed
