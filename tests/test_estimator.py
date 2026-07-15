@@ -47,6 +47,51 @@ def test_basic_fit_and_attributes(data):
     assert search.predict(X[:5]).shape == (5,)
 
 
+def test_verbose_header_names_the_metric(data, caplog):
+    """verbose>=1 must announce which metric is being optimized, and narrate
+    the grid, before any search decisions are logged."""
+    X, y = data
+    with caplog.at_level("INFO", logger="pattern_search_cv"):
+        make_search(scoring="neg_mean_absolute_error", verbose=1).fit(X, y)
+    messages = [r.message for r in caplog.records]
+    header = next(m for m in messages if "optimizing metric" in m)
+    assert "neg_mean_absolute_error" in header
+    assert any("max_depth" in m and "[2, 3, 4" in m for m in messages)
+    # header must precede the first search-decision log
+    header_idx = messages.index(header)
+    decision_idx = next(i for i, m in enumerate(messages)
+                        if "starts (" in m or "climber" in m)
+    assert header_idx < decision_idx
+
+
+def test_verbose_logs_cv_summary_matching_prototype_format(data, caplog):
+    """verbose>=1 must log a full CrossEval-style summary at the end of fit:
+    per-fold arrays AND their means for EV/MAE/MSE/RMSE/R2, on the winning
+    params, over the complete dataset."""
+    X, y = data
+    with caplog.at_level("INFO", logger="pattern_search_cv"):
+        search = make_search(verbose=1).fit(X, y)
+    messages = [r.message for r in caplog.records]
+    assert any("Cross Validation Performance" in m for m in messages)
+    assert any(m.startswith("Cross Validation Time:") for m in messages)
+    for metric in ("EV", "MAE", "MSE", "RMSE"):
+        assert any(m.startswith(f"{metric}:") for m in messages), metric
+        assert any(m.startswith(f"{metric} per fold:") for m in messages), metric
+    assert any(m.startswith("Cross Validation R2:") for m in messages)
+    assert any(m.startswith("fit_time:") for m in messages)
+    assert any(m.startswith("score_time:") for m in messages)
+
+
+def test_verbose_zero_skips_cv_summary(data, caplog):
+    """The extra cross_validate pass must never run at verbose=0 - it costs
+    real fits and must be strictly opt-in."""
+    X, y = data
+    with caplog.at_level("INFO", logger="pattern_search_cv"):
+        make_search(verbose=0).fit(X, y)
+    assert not any("Cross Validation Performance" in r.message
+                  for r in caplog.records)
+
+
 def test_parallel_n_jobs_pickles_estimator(data):
     """n_jobs>1 makes sklearn pickle `self` per task: no handlers, engines
     or generators may live on the instance during fit (regression test)."""

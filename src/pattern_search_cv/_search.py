@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import math
 import os
+import time
 from copy import deepcopy
 from numbers import Integral
 
@@ -78,6 +79,17 @@ class PatternSearchCV(BaseSearchCV):
     start_points : list of dict, optional
         Explicit start points (parameter dicts); they take seats before
         scatter-search generation fills the rest.
+
+    Notes
+    -----
+    ``verbose >= 1`` narrates every search decision as it happens (moves,
+    contractions, ring crossings, data climbs, merges) and, at the end of
+    ``fit``, logs a full ``cross_validate`` pass on the winning parameters
+    over the complete dataset with the user's own ``cv`` splitter -
+    mirroring a typical post-search sanity check.  This adds ``n_splits``
+    extra fits and is skipped entirely at ``verbose=0`` (the default), so it
+    never costs anything unless requested.  ``verbose >= 2`` additionally
+    logs per-probe debug detail.
     """
 
     _required_parameters = ["estimator", "param_grid"]
@@ -114,15 +126,17 @@ class PatternSearchCV(BaseSearchCV):
         handler = self._prepare_run(X, y)
         try:
             super().fit(X, y, **params)
+            results = (self._ctx or {}).get("results")
+            if results is not None:
+                self.local_optima_ = results["local_optima"]
+                self.search_history_ = results["history"]
+                self.n_cache_hits_ = results["cache_hits"]
+            if self.verbose and hasattr(self, "best_params_"):
+                self._log_cv_summary(X, y)
         finally:
             if handler is not None:
                 logger.removeHandler(handler)
-        results = (self._ctx or {}).get("results")
-        if results is not None:
-            self.local_optima_ = results["local_optima"]
-            self.search_history_ = results["history"]
-            self.n_cache_hits_ = results["cache_hits"]
-        self._ctx = None
+            self._ctx = None
         return self
 
     def __sklearn_tags__(self):
@@ -134,6 +148,22 @@ class PatternSearchCV(BaseSearchCV):
         tags.input_tags.allow_nan = sub.input_tags.allow_nan
         tags.target_tags = deepcopy(sub.target_tags)
         return tags
+
+    def _scoring_label(self):
+        """Human-readable name of the metric being optimized (for the
+        verbose header and the end-of-run summary)."""
+        if self.scoring is None:
+            return "estimator default (R^2 for regressors, accuracy for classifiers)"
+        if isinstance(self.scoring, str):
+            return self.scoring
+        if isinstance(self.scoring, dict):
+            names = ", ".join(self.scoring.keys())
+            which = self.refit if isinstance(self.refit, str) else (
+                "callable" if callable(self.refit) else "first")
+            return f"{names} (best selected by: {which})"
+        if callable(self.scoring):
+            return getattr(self.scoring, "__name__", repr(self.scoring))
+        return str(self.scoring)
 
     def _prepare_run(self, X, y):
         # verbose -> package logger (spec forbids print); the handler is
@@ -187,6 +217,14 @@ class PatternSearchCV(BaseSearchCV):
                              f"got {self.contraction!r}")
         if not isinstance(self.n_starts, Integral) or self.n_starts < 1:
             raise ValueError(f"n_starts must be an int >= 1, got {self.n_starts}")
+
+        # ---- header: what is being optimized, and over what grid? -------
+        logger.info("PatternSearchCV: optimizing metric = %s",
+                    self._scoring_label())
+        logger.info("cv = %s", type(self.cv).__name__ if self.cv is not None
+                    else "5-fold KFold (sklearn default)")
+        for d in space.dims:
+            logger.info("  %s : %s", d.name, d.values)
 
         # ---- resource floor: every zone must feed the CV enough rows ----
         n_splits_guess = getattr(self.cv, "n_splits", None) or (
@@ -340,6 +378,67 @@ class PatternSearchCV(BaseSearchCV):
         masked = np.where(mask, scores, -np.inf)
         masked = np.where(np.isnan(masked), -np.inf, masked)
         return int(np.argmax(masked))
+
+    # ---------------------------------------------------- CV summary log
+    def _log_cv_summary(self, X, y):
+        """Extra ``cross_validate`` pass on the winning params, over the
+        full data and the user's own ``cv`` splitter - replicates the
+        prototype's ``CrossEval()`` printout.  Verbose-gated only: this adds
+        ``n_splits`` extra fits and never runs unless the user asked to see
+        it (``verbose >= 1``).
+        """
+        from sklearn.base import clone
+        from sklearn.model_selection import cross_validate
+
+        tags = get_tags(self.estimator)
+        est = clone(self.estimator).set_params(**self.best_params_)
+
+        if tags.estimator_type == "regressor":
+            scoring = ("r2", "explained_variance",
+                      "neg_mean_absolute_error", "neg_mean_squared_error")
+        else:
+            s = self.scoring
+            if isinstance(s, dict):
+                scoring = tuple(s.keys())
+            elif isinstance(s, (list, tuple)):
+                scoring = tuple(s)
+            elif isinstance(s, str):
+                scoring = (s,)
+            else:
+                scoring = ("accuracy",)
+
+        logger.info("Cross Validation Performance (best params, full data):")
+        t0 = time.time()
+        scores = cross_validate(est, X, y, cv=self.cv, scoring=scoring)
+        elapsed = time.time() - t0
+        logger.info("Cross Validation Time: %.6f", elapsed)
+
+        if tags.estimator_type == "regressor":
+            ev = scores["test_explained_variance"]
+            mae = -scores["test_neg_mean_absolute_error"]
+            mse = -scores["test_neg_mean_squared_error"]
+            rmse = np.sqrt(mse)
+            r2 = scores["test_r2"]
+            logger.info("EV per fold: %s", ev)
+            logger.info("EV: %.6f", ev.mean())
+            logger.info("MAE per fold: %s", mae)
+            logger.info("MAE: %.6f", mae.mean())
+            logger.info("MSE per fold: %s", mse)
+            logger.info("MSE: %.6f", mse.mean())
+            logger.info("RMSE per fold: %s", rmse)
+            logger.info("RMSE: %.6f", rmse.mean())
+            logger.info("R2 per fold: %s", r2)
+            logger.info("Cross Validation R2: %.6f", r2.mean())
+        else:
+            for key in scoring:
+                vals = scores[f"test_{key}"]
+                logger.info("%s per fold: %s", key, vals)
+                logger.info("%s: %.6f", key, vals.mean())
+
+        logger.info("fit_time per fold: %s", scores["fit_time"])
+        logger.info("fit_time: %.6f", scores["fit_time"].mean())
+        logger.info("score_time per fold: %s", scores["score_time"])
+        logger.info("score_time: %.6f", scores["score_time"].mean())
 
     # ------------------------------------------------------------- misc
     def _build_history(self, engine):
