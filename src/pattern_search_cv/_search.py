@@ -58,16 +58,20 @@ class PatternSearchCV(BaseSearchCV):
         When the mesh contracts.  "patient" (classic Hooke-Jeeves): only after
         a failed exploratory sweep.  "eager" (prototype-faithful, default): a
         failed pattern move also contracts, spending step resolution faster.
-        CAVEAT: in every controlled single-variable test run on the retail
-        benchmark (three separate experiments), "eager" measured cost-neutral
-        to slightly worse than "patient" on full-fit equivalents (e.g. 6.90 vs
-        6.80; byte-identical evaluation sequences in two other runs) - there
-        is no measured compute advantage to this default, and "eager" carries
-        a real (untested-on-rugged-landscapes) premature-convergence risk that
-        "patient" does not.  It was made default by explicit user decision,
-        not by benchmark evidence.  Consider "patient" if you hit poor optima
-        on a landscape with many local structures; pair "eager" with
-        n_starts > 1 to hedge the risk.
+        CAVEAT, from three controlled tests on the retail benchmark: on
+        *compute cost* (full-fit equivalents), "eager" was never lower than
+        "patient" - tied in two runs with byte-identical evaluation sequences,
+        slightly worse in the third (6.90 vs 6.80).  On *wall-clock* the
+        picture is genuinely mixed, not favorable-to-patient: eager was faster
+        in two of three tests (including the fastest run on record, 576.6 s)
+        and slower in the third (identical work in both directions), so no
+        reliable wall-clock winner has been established either way - the
+        differences look like machine noise, since the same magnitude flipped
+        sign between two identical-workload runs.  "eager" also carries a
+        real (untested-on-rugged-landscapes) premature-convergence risk that
+        "patient" does not.  Made default by explicit user decision.  Consider
+        "patient" if you hit poor optima on a landscape with many local
+        structures; pair "eager" with n_starts > 1 to hedge the risk.
     data_zones : int or sequence of float, default=(0.05, 0.10, 0.20, 1.0)
         The data ladder.  An int n gives n evenly divided levels
         (``4 -> [0.25, 0.5, 0.75, 1.0]``); a sequence gives explicit ascending

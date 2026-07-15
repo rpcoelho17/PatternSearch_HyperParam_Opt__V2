@@ -58,13 +58,19 @@ PatternSearchCV(
     contraction="eager",         # "patient" = classic HJ (contract only on failed
                                  #  sweeps); "eager" = prototype-faithful (failed
                                  #  pattern moves also contract), default since
-                                 #  2026-07-15 by explicit decision, NOT benchmark
-                                 #  evidence: three controlled tests (Experiments
-                                 #  5-7) measured "eager" cost-neutral to slightly
-                                 #  worse than "patient" (e.g. 6.90 vs 6.80 equiv;
-                                 #  byte-identical eval sequences twice), with no
-                                 #  measured compute advantage and an untested
-                                 #  premature-convergence risk "patient" doesn't
+                                 #  2026-07-15 by explicit decision. Three controlled
+                                 #  tests (Experiments 5-7): on COMPUTE COST (full-
+                                 #  fit equivalents) eager was never lower than
+                                 #  patient (tied twice on byte-identical eval
+                                 #  sequences, 6.90 vs 6.80 the other time) - no
+                                 #  measured compute advantage. On WALL-CLOCK the
+                                 #  picture is genuinely mixed: eager faster in 2/3
+                                 #  tests (incl. the fastest run on record, 576.6s)
+                                 #  but slower in the third on IDENTICAL work by a
+                                 #  larger margin (14% vs 4%), so the differences
+                                 #  read as machine noise, not a reliable effect
+                                 #  either way. Eager also carries an untested
+                                 #  premature-convergence risk patient doesn't
                                  #  carry. Pair with n_starts>1 to hedge the risk.
                                  #  See EXPERIMENTS.md Experiments 5-7.
     # --- multi-fidelity ---
