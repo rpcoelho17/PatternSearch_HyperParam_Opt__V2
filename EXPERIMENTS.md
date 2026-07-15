@@ -218,15 +218,29 @@ identical fits measured ~23% slower in the second run. This machine's
 run-to-run noise is ±15–25%; the 135 s gap is inside it. Wall-clock claims on
 this box need repeated runs or fit-work instrumentation.
 
-**Five-way table (the official space, this machine):**
+**Seven-way table (the official space, this machine):**
 
-| | V1 proto (R²) | NEW patient | NEW eager | Optuna TPE | Optuna GP |
-|---|---|---|---|---|---|
-| evaluations | 33 | 23 | 24 | 15 | 15 |
-| full-fit equiv | 33.00 | **6.80** | 6.90 | 15.00 | 15.00 |
-| wall-clock | 1710.9 s | 824.1 s | 688.8 s | 828.7 s | 964.6 s |
-| best point | (4,150,17) | (4,150,17) | (4,150,17) | (4,100,17) | (4,150,17) |
-| CV MAE | 805.730 | 805.730 | 805.730 | 810.553 | 805.730 |
+| | V1 proto (R²) | NEW patient | NEW eager | Optuna TPE | Optuna GP | Exp.7 Patient (stratified) | Exp.7 Eager (stratified) |
+|---|---|---|---|---|---|---|---|
+| zones ladder | n/a | 10/20/50/100 | 10/20/50/100 | n/a | n/a | **5/10/20/100** | **5/10/20/100** |
+| evaluations | 33 | 23 | 24 | 15 | 15 | 22 | 22 |
+| full-fit equiv | 33.00 | **6.80** | 6.90 | 15.00 | 15.00 | **5.85** | **5.85** |
+| wall-clock | 1710.9 s | 824.1 s | 688.8 s | 828.7 s | 964.6 s | 599.7 s | 576.6 s |
+| best point | (4,150,17) | (4,150,17) | (4,150,17) | (4,100,17) | (4,150,17) | (4,130,17) | (4,130,17) |
+| CV MAE of best | 805.730 | 805.730 | 805.730 | 810.553 | 805.730 | **805.038** | **805.038** |
+
+Caveat: the first five columns ran the default 4-zone ladder
+(10/20/50/100%); the last two ran the [5, 10, 20, 100]% ladder from
+Experiments 6–7 with `subsample='stratified'` (full-timeline transition
+sampling) instead of the default expanding window. They are the cheapest
+and best-scoring runs in the table by a clear margin — lowest full-fit
+equivalents (5.85), fastest wall-clock, and the only runs matching the
+historical Run A / V1-prototype optimum's exact MAE (805.038, vs 805.730 for
+every run that started at a 10% zone). This is not an apples-to-apples
+ladder comparison against the other five columns, but it is the strongest
+single result in this log for the combination of an aggressive 5% starting
+zone with stratified sampling — see Experiment 7 for the full stratified-
+vs-expanding analysis.
 
 ---
 
