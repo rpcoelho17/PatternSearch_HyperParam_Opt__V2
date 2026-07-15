@@ -366,6 +366,26 @@ Experiment 6's correction and should be ignored.)
 
 ---
 
+## Experiment 8 — Patient/Eager, zones [2.5%, 5%, 10%, 100%], verbose=2 (built, awaiting run)
+
+Notebook: `PE_Round_2.5_5_10_100_verbose2.ipynb`. Same P-then-E controlled
+round as Experiments 6–7, one step more aggressive on the starting zone
+(2.5% ≈ 10.5K rows, vs Experiment 7's 5%), `subsample="stratified"` explicit
+(Experiment 7's winning configuration), `poll="opportunistic"` explicit,
+**`verbose=2`** — built specifically for interactive use: the user opens it
+in Jupyter/VS Code and runs cells themselves to watch the full live decision
+narration (climber calibration, ring crossings, sweep probes, pattern moves,
+contractions, data climbs, merges) stream as it happens, rather than reading
+captured output after a headless run. Not pre-executed for that reason.
+
+Question under test: does the 2.5% rung still find the right basin (à la
+Experiment 7's stratified 5% success), or is this below even the stratified
+sampler's reliability floor (à la Experiment 6's *expanding* 5% failure)?
+
+*(results pending — awaiting interactive run)*
+
+---
+
 ## Open questions queued for future experiments
 
 - `subsample='stratified'` (transition sampling) vs `'expanding'` on this dataset —
