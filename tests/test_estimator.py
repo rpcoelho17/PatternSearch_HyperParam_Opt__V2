@@ -180,12 +180,12 @@ def test_time_series_auto_can_still_reach_expanding_explicitly(data):
     assert search.best_params_  # "auto" moved off expanding; explicit still works
 
 
-def test_defaults_are_eager_and_new_zones():
+def test_defaults_are_patient_and_aggressive_zones():
     search = PatternSearchCV(DecisionTreeRegressor(random_state=0), GRID)
     params = search.get_params()
-    assert params["contraction"] == "eager"
+    assert params["contraction"] == "patient"  # eager never beat it (Exp. 7-11)
     assert params["poll"] == "auto"  # kept adaptive: never tested "complete" poll
-    assert tuple(params["data_zones"]) == (0.05, 0.10, 0.20, 1.0)
+    assert tuple(params["data_zones"]) == (0.005, 0.01, 0.1, 1.0)
     assert params["subsample"] == "auto"
 
 

@@ -760,6 +760,67 @@ further.
 
 ---
 
+## Patient vs eager across the starting-zone progression (Experiments 7–11)
+
+Patient runs:
+
+| | Exp.7 Patient | Exp.8 Patient | Exp.9 Patient | Exp.10 Patient | Exp.11 Patient |
+|---|---|---|---|---|---|
+| zones ladder | 5/10/20/100 | 2.5/5/10/100 | 1/5/10/100 | 0.5/1/10/100 | 0.25/1/10/100 |
+| evaluations | 22 | 22 | 22 | 22 | 22 |
+| full-fit equiv | 5.85 | 5.43 | 5.17 | 5.09 | **5.04** |
+| wall-clock | 599.7 s | 626.1 s | 512.0 s | 443.8 s | 445.8 s |
+| best point | (4,130,17) | (4,130,17) | (4,130,17) | (4,130,17) | (4,130,17) |
+| CV MAE of best | 805.038 | 805.038 | 805.038 | 805.038 | 805.038 |
+
+Eager runs:
+
+| | Exp.7 Eager | Exp.8 Eager | Exp.9 Eager | Exp.10 Eager | Exp.11 Eager |
+|---|---|---|---|---|---|
+| zones ladder | 5/10/20/100 | 2.5/5/10/100 | 1/5/10/100 | 0.5/1/10/100 | 0.25/1/10/100 |
+| evaluations | 22 | 22 | 22 | 22 | 22 |
+| full-fit equiv | 5.85 | 5.43 | 5.17 | 5.09 | **5.04** |
+| wall-clock | 576.6 s | 649.9 s | 475.0 s | 445.0 s | 469.7 s |
+| best point | (4,130,17) | (4,130,17) | (4,130,17) | (4,130,17) | (4,130,17) |
+| CV MAE of best | 805.038 | 805.038 | 805.038 | 805.038 | 805.038 |
+
+---
+
+## DEFAULT CHANGE (2026-07-15): contraction="patient", data_zones=(0.005, 0.01, 0.1, 1.0)
+
+Following the two tables above, decided to set the shipped defaults to
+**`contraction="patient"`** (reverted from `"eager"`, set 2026-07-15 earlier
+today) and **`data_zones=(0.005, 0.01, 0.1, 1.0)`** (0.5/1/10/100%, changed
+from `(0.05, 0.10, 0.20, 1.0)`).
+
+Justification for `contraction="patient"`: across all five controlled
+rounds (Experiments 7–11), patient and eager are tied on every cost metric
+that matters — identical evaluation counts, identical full-fit equivalents,
+identical best point and MAE in every single round. Wall-clock bounces both
+directions within the established machine-noise floor (patient faster in
+3 of 5 rounds, eager in 2 of 5, no consistent winner). There has never been
+a measured advantage to `"eager"` in this project; reverting to `"patient"`
+removes an unjustified deviation from classic Hooke-Jeeves and its
+documented (if untested-here) premature-convergence risk, at zero measured
+cost.
+
+Justification for the `0.5/1/10/100%` ladder: Experiment 10 (this exact
+ladder) measured 5.09 full-fit equivalents with `patient`, matching the
+historical optimum (805.038) — the best-tested ladder at the time of this
+decision (Experiment 11 later found 0.25% starts marginally better still,
+5.04 equiv, but that ladder was not chosen as default here). Caveat carried
+forward from the discussion before this decision: this is single-dataset,
+single-grid evidence (523K rows, one 3-parameter ExtraTrees search); an
+aggressive 0.5% starting zone has not been validated on smaller datasets,
+higher-dimensional grids, or non-time-series data, and this dataset's
+favorable behavior at small fractions is partly attributable to its
+store-blocked structure (§ "why stratified sampling has actually been
+winning" above) rather than to a universal property of aggressive
+subsampling. The resource floor (`min_rows = max(2*(n_splits+1), 8)`)
+protects small datasets from an unreasonably tiny first rung regardless.
+
+---
+
 ## Open questions queued for future experiments
 
 - ~~`subsample='stratified'` vs `'expanding'` on this dataset~~ — **answered**

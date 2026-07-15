@@ -55,33 +55,34 @@ PatternSearchCV(
                                  #  and deliberately kept 2026-07-15 rather than
                                  #  hardcoding a choice that was never tested.
     mesh_expansion=1.0,          # 1.0 = off (default); 2.0 = MATLAB GPS parity
-    contraction="eager",         # "patient" = classic HJ (contract only on failed
-                                 #  sweeps); "eager" = prototype-faithful (failed
-                                 #  pattern moves also contract), default since
-                                 #  2026-07-15 by explicit decision. Three controlled
-                                 #  tests (Experiments 5-7): on COMPUTE COST (full-
-                                 #  fit equivalents) eager was never lower than
-                                 #  patient (tied twice on byte-identical eval
-                                 #  sequences, 6.90 vs 6.80 the other time) - no
-                                 #  measured compute advantage. On WALL-CLOCK the
-                                 #  picture is genuinely mixed: eager faster in 2/3
-                                 #  tests (incl. the fastest run on record, 576.6s)
-                                 #  but slower in the third on IDENTICAL work by a
-                                 #  larger margin (14% vs 4%), so the differences
-                                 #  read as machine noise, not a reliable effect
-                                 #  either way. Eager also carries an untested
-                                 #  premature-convergence risk patient doesn't
-                                 #  carry. Pair with n_starts>1 to hedge the risk.
-                                 #  See EXPERIMENTS.md Experiments 5-7.
+    contraction="patient",       # "patient" = classic HJ (contract only on failed
+                                 #  sweeps, default); "eager" = prototype-faithful
+                                 #  (failed pattern moves also contract). Reverted
+                                 #  to "patient" 2026-07-15: across five controlled
+                                 #  rounds (Experiments 7-11), patient and eager
+                                 #  tied on every cost metric (identical evals,
+                                 #  equivalents, best point/score every round);
+                                 #  wall-clock bounced both directions with no
+                                 #  consistent winner. No measured advantage to
+                                 #  "eager" was ever found, so "patient" is default
+                                 #  - it also avoids eager's untested premature-
+                                 #  convergence risk at zero measured cost.
+                                 #  See EXPERIMENTS.md Experiments 5-11.
     # --- multi-fidelity ---
-    data_zones=(0.05, 0.10, 0.20, 1.0),  # int n -> n even levels (4 -> [.25,.5,.75,1]);
+    data_zones=(0.005, 0.01, 0.1, 1.0),  # int n -> n even levels (4 -> [.25,.5,.75,1]);
                                  #  or explicit ascending values ending in 1.0 for
                                  #  uneven ladders; 1 disables the ladder. Changed
-                                 #  from (0.10,0.20,0.50,1.0) 2026-07-15: strictly
-                                 #  dominated the old default on the retail
-                                 #  benchmark (better optimum, less compute, faster
-                                 #  wall-clock) when paired with subsample=
-                                 #  "stratified". Evidence: one dataset/grid.
+                                 #  to 0.5/1/10/100% 2026-07-15 after five
+                                 #  successive halvings of the starting zone
+                                 #  (10%->5%->2.5%->1%->0.5%) each matched or beat
+                                 #  the one before (5.09 full-fit equiv at the same
+                                 #  optimum, paired with subsample="stratified").
+                                 #  Evidence: one dataset/grid; store-blocked row
+                                 #  structure partly explains the favorable
+                                 #  behavior at small fractions (see EXPERIMENTS.md
+                                 #  "why stratified sampling has actually been
+                                 #  winning"). Resource floor still protects small
+                                 #  datasets from an unreasonably tiny first rung.
                                  #  See EXPERIMENTS.md Experiment 7 seven-way table.
     warmup=3,                    # best-updates before rings calibrate; higher = data
                                  #  added closer to the optimum (the "patience dial")
@@ -243,15 +244,21 @@ Active by default, **including `n_starts=1`**. `data_zones=1` disables it.
 
 `data_zones` accepts an int — n evenly divided levels, e.g. `4 -> [0.25, 0.5, 0.75, 1.0]`,
 `3 -> [1/3, 2/3, 1.0]` — or explicit ascending values ending in 1.0 for uneven ladders.
-**Default: `(0.05, 0.10, 0.20, 1.0)`** (changed 2026-07-15 from `(0.10, 0.20, 0.50, 1.0)`)
-— front-loaded cheap zones for the probe-heavy early phases, and only four levels because
-measured searches make ~3–5 best-moves total (§ warm-up rationale): more levels than moves
-would never be traversed. The more aggressive 5% starting zone was adopted after it
-strictly dominated the previous default on the retail benchmark (better optimum, less
-compute, faster wall-clock) when paired with `subsample="stratified"` — see
-EXPERIMENTS.md Experiment 7's seven-way table. Evidence is from a single dataset/grid;
-a 5% start risks an unrepresentative sample when `subsample` cannot make small rungs
-faithful (Experiment 6 showed exactly this failure mode with `subsample="expanding"`).
+**Default: `(0.005, 0.01, 0.1, 1.0)`** (changed 2026-07-15, second time that day:
+`(0.10,0.20,0.50,1.0)` → `(0.05,0.10,0.20,1.0)` → `(0.005,0.01,0.1,1.0)`) — front-loaded
+cheap zones for the probe-heavy early phases, and only four levels because measured
+searches make ~3–5 best-moves total (§ warm-up rationale): more levels than moves would
+never be traversed. This most aggressive 0.5% starting zone was adopted after five
+successive halvings of the starting fraction (10%→5%→2.5%→1%→0.5%, Experiments 7–11)
+each matched or beat the one before on the retail benchmark, with 0.5% giving 5.09
+full-fit equivalents at the same optimum (805.038) that every less-aggressive ladder
+also found, paired with `subsample="stratified"` — see EXPERIMENTS.md's Patient/Eager
+progression tables. Evidence is from a single dataset/grid; a 0.5% start risks an
+unrepresentative sample when `subsample` cannot make small rungs faithful (Experiment 6
+showed exactly this failure mode at 5% with `subsample="expanding"`), and this
+dataset's favorable behavior at small fractions is partly attributable to its
+store-blocked row structure (§ "why stratified sampling has actually been winning" in
+EXPERIMENTS.md) rather than a universal property of aggressive subsampling.
 Validation: int >= 1, or values in (0, 1], strictly ascending, last element 1.0.
 (Default is a tuple only because sklearn convention forbids mutable default arguments;
 lists are accepted.)
@@ -264,9 +271,9 @@ ladder; there is no trend/deceleration machinery — one speedometer reading, on
 
 | Latest `best`-to-`best` displacement (normalized) | Fraction (default zones) |
 |---|---|
-| above ring boundary 1 (striding / traveling) | 0.05 |
-| below boundary 1 | 0.10 |
-| below boundary 2 | 0.20 |
+| above ring boundary 1 (striding / traveling) | 0.005 |
+| below boundary 1 | 0.01 |
+| below boundary 2 | 0.10 |
 | below boundary 3 (endgame-scale moves) | 1.00 |
 
 Rules:

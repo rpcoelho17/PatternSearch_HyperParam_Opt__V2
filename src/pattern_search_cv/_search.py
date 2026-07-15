@@ -26,7 +26,7 @@ from ._space import Space
 
 logger = logging.getLogger("pattern_search_cv")
 
-_DEFAULT_ZONES = (0.05, 0.10, 0.20, 1.0)
+_DEFAULT_ZONES = (0.005, 0.01, 0.1, 1.0)
 
 
 class PatternSearchCV(BaseSearchCV):
@@ -54,35 +54,38 @@ class PatternSearchCV(BaseSearchCV):
         Step-size multiplier applied after a successful sweep.  1.0 (default)
         is classic Hooke-Jeeves (contraction only); 2.0 matches MATLAB GPS.
         Raise it on fine, continuous-like grids.
-    contraction : {"patient", "eager"}, default="eager"
-        When the mesh contracts.  "patient" (classic Hooke-Jeeves): only after
-        a failed exploratory sweep.  "eager" (prototype-faithful, default): a
-        failed pattern move also contracts, spending step resolution faster.
-        CAVEAT, from three controlled tests on the retail benchmark: on
-        *compute cost* (full-fit equivalents), "eager" was never lower than
-        "patient" - tied in two runs with byte-identical evaluation sequences,
-        slightly worse in the third (6.90 vs 6.80).  On *wall-clock* the
-        picture is genuinely mixed, not favorable-to-patient: eager was faster
-        in two of three tests (including the fastest run on record, 576.6 s)
-        and slower in the third (identical work in both directions), so no
-        reliable wall-clock winner has been established either way - the
-        differences look like machine noise, since the same magnitude flipped
-        sign between two identical-workload runs.  "eager" also carries a
-        real (untested-on-rugged-landscapes) premature-convergence risk that
-        "patient" does not.  Made default by explicit user decision.  Consider
-        "patient" if you hit poor optima on a landscape with many local
-        structures; pair "eager" with n_starts > 1 to hedge the risk.
-    data_zones : int or sequence of float, default=(0.05, 0.10, 0.20, 1.0)
+    contraction : {"patient", "eager"}, default="patient"
+        When the mesh contracts.  "patient" (classic Hooke-Jeeves, default):
+        only after a failed exploratory sweep.  "eager" (prototype-faithful):
+        a failed pattern move also contracts, spending step resolution
+        faster.  Across five controlled rounds on the retail benchmark
+        (Experiments 7-11), "patient" and "eager" were tied on every cost
+        metric that matters - identical evaluation counts, identical
+        full-fit equivalents, identical best point and score in every
+        round.  Wall-clock bounced both directions within the machine's
+        noise floor with no consistent winner (patient faster in 3 of 5
+        rounds, eager in 2 of 5).  There has never been a measured
+        advantage to "eager" in this project, so "patient" is the default:
+        it also avoids "eager"'s untested-on-rugged-landscapes
+        premature-convergence risk at zero measured cost.  If you use
+        "eager" anyway, pair it with n_starts > 1 to hedge that risk.
+    data_zones : int or sequence of float, default=(0.005, 0.01, 0.1, 1.0)
         The data ladder.  An int n gives n evenly divided levels
         (``4 -> [0.25, 0.5, 0.75, 1.0]``); a sequence gives explicit ascending
         fractions ending at 1.0; ``1`` disables multi-fidelity.  This
-        front-loaded, aggressive-start ladder was set as the default after it
-        strictly dominated the previous default (0.10, 0.20, 0.50, 1.0) on the
-        retail benchmark - better optimum, less compute (5.85 vs 6.80 full-fit
-        equivalents), and faster wall-clock - when paired with
-        ``subsample="stratified"``.  Evidence is from one dataset/grid; a 5%
-        starting zone risks an unrepresentative sample on data where
-        ``subsample`` cannot make small rungs faithful (see ``subsample``).
+        aggressive 0.5%-start ladder was set as the default after five
+        successive halvings of the starting zone (10% -> 5% -> 2.5% -> 1% ->
+        0.5%) each matched or beat the one before it on the retail
+        benchmark, with 0.5% giving 5.09 full-fit equivalents at the same
+        optimum (805.038) that every less-aggressive ladder also found.
+        Evidence is from one dataset/grid (523K rows, a 3-parameter
+        ExtraTrees search); an aggressive 0.5% start has not been validated
+        on smaller datasets, higher-dimensional grids, or non-time-series
+        data, and this dataset's favorable behavior at small fractions is
+        partly attributable to its store-blocked row structure rather than
+        a universal property of aggressive subsampling.  The resource floor
+        (``min_rows = max(2*(n_splits+1), 8)``) protects small datasets from
+        an unreasonably tiny first rung regardless.
     warmup : int, default=3
         Number of positions (starting point included) before the bullseye
         rings self-calibrate.  The patience dial: higher = data is added
@@ -125,7 +128,7 @@ class PatternSearchCV(BaseSearchCV):
                  refit=True, cv=None, verbose=0, random_state=None,
                  pre_dispatch="2*n_jobs", error_score=np.nan,
                  return_train_score=False,
-                 poll="auto", mesh_expansion=1.0, contraction="eager",
+                 poll="auto", mesh_expansion=1.0, contraction="patient",
                  data_zones=_DEFAULT_ZONES, warmup=3,
                  subsample="auto", subsample_columns=None,
                  n_starts=1, start_points=None):
