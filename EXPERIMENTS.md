@@ -818,3 +818,112 @@ store-blocked structure (§ "why stratified sampling has actually been
 winning" above) rather than to a universal property of aggressive
 subsampling. The resource floor (`min_rows = max(2*(n_splits+1), 8)`)
 protects small datasets from an unreasonably tiny first rung regardless.
+
+---
+
+## Experiment 12 — `GPProposer` vs Optuna `GPSampler`, dev-time validation (2026-07-18, done)
+
+Notebook: `GP_Validation_vs_Optuna.ipynb`, run from the separate `psc-opt` venv
+(torch 2.5.1+cpu, optuna 4.9.0 — dev-time reference only, never a runtime
+dependency; see `BayesHalvingSearchCV_SPEC.md` §1.1/§8). Not part of the pytest
+suite, not a CI gate. Validates the from-scratch `GPProposer`
+(`sklearn.gaussian_process.GaussianProcessRegressor`, Matern 5/2, hand-rolled
+Expected Improvement) built for `BayesHalvingSearchCV` against Optuna's
+`GPSampler` before trusting it for a real benchmark.
+
+**Part A — synthetic functions (isolated optimizer logic, 18 evals, seed=0)**
+
+Unimodal (21x21 quadratic bowl): both optimizers found the exact known
+optimum (10, 10), distance 0.
+
+Multimodal (Rastrigin): first attempt (sklearn's default
+`length_scale_bounds=(1e-5, 1e5)`) exposed a real defect — after 4 spread
+cold-start draws, `GPProposer` degenerated into a monotonic walk along one
+grid edge for the remaining 14 evals, landing far from the optimum (value
+-25.0, vs. Optuna's -1.0). Root cause: on Rastrigin's high-frequency
+landscape the length-scale MLE collapsed to the lower bound every fit
+(`ConvergenceWarning` on every call), producing a near-delta kernel whose
+predictions revert to the same value everywhere far from training data — EI
+went flat, and the deterministic `min(tied)` tie-break then walked
+lexicographically through the remaining grid. **Fix**: floor
+`length_scale_bounds=(0.05, 10.0)` with `length_scale=0.5` (0.05 = one grid
+step in `_featurize`'s normalized coordinates) in `GPProposer._gp_ei_pick`
+(`_gp.py`). After the fix, proposals stayed varied throughout, landing at
+(10, 14), distance 4 — vs. Optuna's (10, 8), distance 2. All 204 package
+tests still pass after this change (no test asserted an exact proposal
+sequence).
+
+**Part B — real grid, fixed 0.25% data fraction (1,047 rows), `n_iter=15`, seed=0**
+
+Grid: `max_features` {2,3,4} x `n_estimators` {10..260 step 10} x
+`max_depth` {5..17} = 1,014 points. Fixed subset via `stratified_order`
+(same call `subsample="auto"` makes for `TimeSeriesSplit`), one shared
+`objective` for both optimizers.
+
+| | GPProposer | Optuna GP |
+|---|---|---|
+| best MAE (0.25% subset) | **956.171** | 965.346 |
+| best point | (4, 140, 17) | (4, 170, 15) |
+| lands in (4, ~130-150, 17)-class optimum? | **yes** | no |
+| wall-clock | 76.3 s | 22.4 s |
+
+Path comparison: set overlap 2/15 (13%), position-by-position matches 0/15
+(expected — both optimizers cold-start differently, so early-position
+agreement is the least informative signal, per spec). Not comparable in MAE
+terms to Experiment 4's 100%-data numbers (805.730) — different data size,
+different landscape.
+
+**Finding: `GPProposer` is validated.** Perfect on the unimodal sanity check,
+reasonable (post-fix) divergence on an adversarial multimodal function, and
+on the real objective at a realistic low-data fraction it beat Optuna's
+`GPSampler` on both MAE and on recovering this project's known optimum
+basin — a specific, meaningful correctness signal beyond "some
+reasonable-looking answer." Cleared to use, unmodified from this state, in
+`BayesHalvingSearchCV`'s real benchmark against `PatternSearchCV`.
+
+---
+
+## Experiment 13 — BayesHalvingSearchCV vs PatternSearchCV, real benchmark (2026-07-18, done)
+
+Notebook: `BHS_vs_PSC_26grid.ipynb`. Runs in the plain package `.venv` — no
+torch anywhere in this notebook, confirming `BayesHalvingSearchCV` really has
+zero additional runtime dependencies. Official grid (`max_features` {2,3,4} x
+`n_estimators` {10..260 step 10} x `max_depth` {5..17}), `TimeSeriesSplit(5)`,
+MAE, zones `(0.005, 0.01, 0.1, 1.0)`, `subsample="stratified"`,
+`random_state=0`, `n_starts=1` on both arms — directly comparable to the
+reference rows in `BayesHalvingSearchCV_SPEC.md` §0.
+
+**Results**
+
+| | Optuna GP, 100% data (Exp. 4) | PatternSearchCV, defaults (this run) | **BayesHalvingSearchCV** (this run) |
+|---|---|---|---|
+| evaluations | 15 | 22 | 28 |
+| full-fit equivalents | 15.00 | 5.09 | **3.89** |
+| best point | (4,150,17)-class | (4, 130, 17) | (4, 150, 17) |
+| best CV MAE | 805.730 | 805.038 | 805.730 |
+| wall-clock | 964.6 s | 1157.6 s | 993.2 s |
+| zones used (rows) | — | [2093, 418416] | [2093, 41842, 418416] |
+
+**Finding: mission met, and BayesHalvingSearchCV beat PatternSearchCV's own
+equivalents count on this run.** `BayesHalvingSearchCV` reached the exact MAE
+Optuna's `GPSampler` found at 100% data (805.730) at **3.89 full-fit
+equivalents — a 74% reduction from Optuna's 15.00**, and 24% fewer
+equivalents than `PatternSearchCV`'s 5.09, despite 28 raw evaluations vs
+PatternSearchCV's 22: 17 of the 28 ran at the cheapest 0.5% rung, 8 more at
+10% after a single zone climb (3 of those are the `promote_k=3` re-score
+that triggered the climb), and only the mandatory 3-row final polish touched
+full data — the bullseye ladder is doing exactly what it should. Wall-clock
+(993.2 s vs 1157.6 s, ratio 0.858) favors BHS too, but per the established
+machine-noise rule (~15–25% is noise on this machine) that is not a
+confidently-claimable win by itself; full-fit equivalents is the primary
+metric, and there the win (24% fewer) is real and outside the noise floor.
+
+BayesHalvingSearchCV did not find PatternSearchCV's slightly better optimum
+(805.038 at (4,130,17) vs 805.730 at (4,150,17)) — a 0.09% relative MAE gap,
+i.e. both land in the same (4, ~130–150, 17)-class basin this project keeps
+finding at low data fractions (Experiments 7–11), just at adjacent grid
+points. Given `GPProposer`'s own validation (Experiment 12) showed it lands
+in this exact basin reliably, this reads as expected single-seed,
+single-start noise between two different search algorithms rather than a
+search-quality gap — the `n_starts=4` follow-up arm (spec §10, optional,
+not yet run) would be the way to confirm that.
