@@ -928,8 +928,7 @@ finding at low data fractions (Experiments 7–11), just at adjacent grid
 points. Given `GPProposer`'s own validation (Experiment 12) showed it lands
 in this exact basin reliably, this reads as expected single-seed,
 single-start noise between two different search algorithms rather than a
-search-quality gap — the `n_starts=4` follow-up arm (spec §10, optional,
-not yet run) would be the way to confirm that.
+search-quality gap.
 
 **Follow-up (2026-07-18): why does PatternSearchCV have fewer total fits
 (22 vs 28) but higher full-fit equivalents (5.09 vs 3.89)?** Re-ran the
@@ -1038,14 +1037,11 @@ real caveats, not as a refutation:**
    the coarse win/lose comparisons a pattern-search sweep actually needs
    (not a precise ranking, just "did this move help").
 
-**Open follow-up, not yet run:** repeat the `subsample='random'` arm across
-multiple seeds (the "multi-seed variance bands" item already in
-`OpenQuestions.md`) before concluding coverage doesn't matter to search
-outcomes at all — one seed, however clean, is not enough to overturn the
-side-analysis's real, measured coverage gap. What this experiment does show
-is that `stratified`'s coverage guarantee is not *load-bearing* for this
-specific search/grid/seed at 0.2% — a useful, honest negative result, not
-the confirmation the theory predicted.
+One seed, however clean, is not enough to overturn the side-analysis's
+real, measured coverage gap. What this experiment does show is that
+`stratified`'s coverage guarantee is not *load-bearing* for this specific
+search/grid/seed at 0.2% — a useful, honest negative result, not the
+confirmation the theory predicted.
 
 **Follow-up side-analysis: is the tie/win actually leakage, not luck?**
 (not a `PatternSearchCV` search run — same "isolate the mechanism cheaply"
@@ -1078,6 +1074,4 @@ either sampler, the ~20-point gap reads as ordinary sampling variance: seed
 0's particular 837-row draw happened to land on a slightly easier split for
 this config (fewer noisy folds), not test information reaching train. This
 is a single-config check, though — it doesn't rule out a real generalization
-gap becoming visible on other configs or other seeds. The multi-seed
-follow-up above remains the way to settle whether Experiment 14's result
-generalizes.
+gap becoming visible on other configs or other seeds.
