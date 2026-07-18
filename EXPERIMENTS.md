@@ -818,29 +818,3 @@ store-blocked structure (§ "why stratified sampling has actually been
 winning" above) rather than to a universal property of aggressive
 subsampling. The resource floor (`min_rows = max(2*(n_splits+1), 8)`)
 protects small datasets from an unreasonably tiny first rung regardless.
-
----
-
-## Open questions queued for future experiments
-
-- ~~`subsample='stratified'` vs `'expanding'` on this dataset~~ — **answered**
-  (Experiment 7 measured the win; the store-coverage sections above explain
-  the mechanism precisely).
-- **[pending decision]** How to treat the store-based-not-date-based CV
-  finding: correct the documentation to describe it accurately, re-sort the
-  pipeline by `Date` globally and re-run key experiments, or something else.
-- **[new]** `subsample='random'` has never been run in an actual P/E search
-  on this dataset — predicted to tie `stratified` at 1%+ per the store-
-  coverage numbers, and to lose below ~0.5%. Worth adding as a comparison arm.
-- **[new]** A P/E search at 0.1%–0.2% starting zone, where `stratified` is
-  predicted to finally separate from both `expanding` and `random` in an
-  actual search outcome, not just a coverage count.
-- **[new]** `subsample_columns` narrowed to genuinely categorical columns
-  (excluding all weather), to produce real multi-row runs and exercise the
-  sampler's designed boundary/midpoint/novel-seat logic, which has never
-  fired on this dataset (see the sampler methodology note above).
-- `n_starts ∈ {1, 2, 4, 8}` at same budget and same wall-clock (multi-start ablation).
-- `poll='complete'` on this 8-core machine (expected ~neutral single-start; relevant
-  with multi-start batching).
-- Whether intermediate data zones engage on larger grids / multi-start.
-- Multi-seed variance bands for the Optuna samplers (both runs above are seed=0).
