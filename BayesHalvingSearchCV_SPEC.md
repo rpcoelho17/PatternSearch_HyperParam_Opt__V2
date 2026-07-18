@@ -36,10 +36,11 @@ mechanism (`n_starts`, `start_points`, scatter-search selection).
 Before benchmarking it against `PatternSearchCV`, **validate the from-scratch GP
 proposer's correctness against Optuna's `GPSampler`** (a trusted, widely-used
 reference implementation) — on a synthetic function (isolated optimizer logic, no
-model fits) and on the real benchmark grid (comparable to the already-recorded
-Experiment 4 result). This validation is dev-time-only: it needs Optuna and torch
-as external reference tools, but neither becomes a dependency of the shipped
-estimator. See §8.
+model fits) and on the real benchmark grid at a fixed cheap data fraction (0.25%,
+for a fast, apples-to-apples proposal-path comparison — not a rerun of Experiment
+4's 100%-data configuration). This validation is dev-time-only: it needs Optuna
+and torch as external reference tools, but neither becomes a dependency of the
+shipped estimator. See §8.
 
 Reference numbers the new estimator is trying to beat (official space:
 `max_features` {2,3,4} × `n_estimators` {10..260 step 10} × `max_depth` {5..17},
@@ -584,27 +585,53 @@ real model fitting.
    sound behavior (spread-out early proposals, convergence toward the best region
    later, no wasted repeated proposals of already-observed points).
 
-### 8.2 Part B — real benchmark grid, comparable to Experiment 4
+### 8.2 Part B — real grid, fixed cheap fraction (0.25%), path comparison
 
-1. Run `GPProposer`'s core loop (single start, single fidelity — all evaluations
-   at 100% data, `n_iter=15`, no multi-fidelity zones) directly against the real
-   retail-dataset pipeline and official grid — the exact configuration Experiment
-   4's Optuna `GPSampler` run used, so results are comparable to that already-
-   recorded reference (15 evals, 15.00 equiv, best MAE 805.730 at (4,150,17),
-   964.6 s — `EXPERIMENTS.md`). Reuse Experiment 4's recorded numbers as the
-   authoritative comparison point for **best point / best MAE** (already
-   verified; no need to duplicate that specific measurement).
-2. Optionally, also rerun Optuna's `GPSampler` fresh in the same session/script
-   immediately before or after the `GPProposer` run, for a same-machine,
-   same-session **wall-clock** pairing (per this project's established rule:
-   never compare wall-clock across different sessions/machines — see
-   `EXPERIMENTS.md`'s machine-noise discussion).
-3. Report in the user's standard comparison-table format: evaluations, best
-   point, best CV MAE, wall-clock, for `GPProposer` alongside Experiment 4's
-   Optuna numbers (and the fresh Optuna rerun if done). Success bar: `GPProposer`
-   should find the same or a comparably-good basin (MAE in the same ballpark,
-   ideally the same (4,150,17)/(4,130,17)-class optimum this whole project keeps
-   converging on) within a similar evaluation budget.
+**Goal here is different from 8.1: not "does it work on a toy function" but "does
+it choose the same path as Optuna on the real objective" — made affordable by
+using a single fixed cheap data fraction instead of paying full-data price per
+trial, the same way this project's own P/E experiments made everything else
+affordable.** This deliberately does **not** exercise `BayesHalvingSearchCV`'s
+multi-fidelity climbing (that is already covered by `test_bayes.py` items 16 and
+by §10's full benchmark) — both optimizers see one fixed data size throughout, so
+any difference in their proposal sequences reflects the optimizers, not a
+changing objective.
+
+1. **Build one fixed, shared objective, once**: run the real pipeline (same as
+   every other benchmark notebook — copy `Prototype_Replication.ipynb` cells[1]),
+   compute the priority order via `stratified_order` (the same call
+   `subsample="auto"` would make for `TimeSeriesSplit`), and take its **top 0.25%
+   prefix** (~1,046 rows on the 418K-row training set) as a fixed row subset.
+   Wrap it in one `ZoneSplitter(TimeSeriesSplit(n_splits=5), that_subset)`. Define
+   `objective(idx) -> float`: build params via `Space.params(idx)`, fit the
+   official-grid `ExtraTreesRegressor` config, score via that one fixed splitter
+   (MAE, negated to match the greater-is-better convention). **This exact
+   `objective` function, unchanged, is what both optimizers below actually
+   optimize** — the point of fixing it once is that any difference in behavior is
+   attributable to the optimizer, not to a shifting target.
+2. Run `GPProposer`'s raw `observe`/`suggest` loop directly against `objective`
+   (no `BayesHalvingSearchCV`, no zones, no `BaseSearchCV` machinery — same
+   isolation as §8.1) for a fixed budget, `n_iter=15` (matching this project's
+   established scale), fixed seed.
+3. Run Optuna's `GPSampler` via ask/tell against the **same** `objective`
+   function, same seed, same `n_iter=15`, in the same session/script immediately
+   before or after step 2 (same-session wall-clock pairing, per this project's
+   established machine-noise rule — see `EXPERIMENTS.md`).
+4. Report: the full proposed-point sequence from each side by side (the "path" —
+   this is the primary output of this test); final best point and best MAE from
+   each; wall-clock for each. **Do not require identical paths** (§8's opening
+   caveat still applies — different kernel/acquisition/RNG internals make exact
+   agreement unrealistic), but do check they land in the **same or an adjacent
+   basin** — and note explicitly if both converge to the (4,130,17)/(4,150,17)-class
+   optimum this project keeps finding at low data fractions (Experiments 7–11),
+   since that would be a strong, specific correctness signal beyond "some
+   reasonable-looking answer."
+5. This 0.25%-fraction run is **not** directly comparable in MAE terms to
+   Experiment 4's 100%-data-Optuna numbers (805.730 at 100% data) — different
+   data size, different landscape, as this project has established repeatedly.
+   Do not present this test's MAE values as beating or matching Experiment 4;
+   present them only as the same-conditions GPProposer-vs-Optuna comparison they
+   actually are.
 
 Log this validation's outcome as a short section in `EXPERIMENTS.md` (a new
 numbered experiment, append-only, same format as everything else) — it is a real
