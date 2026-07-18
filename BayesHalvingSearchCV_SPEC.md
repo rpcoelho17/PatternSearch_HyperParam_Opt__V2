@@ -626,6 +626,29 @@ changing objective.
    optimum this project keeps finding at low data fractions (Experiments 7–11),
    since that would be a strong, specific correctness signal beyond "some
    reasonable-looking answer."
+
+   **Quantify "how many points are different," precisely, two ways** (a single
+   vague "different" count is not meaningful without saying which of these it
+   is — report both):
+   - **Set overlap (order-independent, the headline number)**: of the (up to) 15
+     distinct index tuples each side visited, how many appear in *both* sets
+     (`len(gp_proposer_points & optuna_points)`), and how many are unique to each
+     side. This answers "did they explore the same region of the grid."
+   - **Position-by-position match (order-dependent, a stricter secondary stat)**:
+     for step `i` in `1..15`, does `gp_proposer_path[i] == optuna_path[i]`? Report
+     the count of matching positions out of 15.
+   - **Expect the position-by-position count to be low, and say so in the
+     report — this is not a red flag.** Both optimizers spend their first ~2
+     proposals in a cold-start/random-initialization phase before their
+     surrogate model has enough data to be meaningful (`GPProposer`'s own
+     cold-start rule, §5.2 item 2; Optuna's `GPSampler` has an analogous
+     random-startup phase internally). Two independent random-initialization
+     draws, even from "the same seed," will not produce the same points unless
+     the two implementations happen to use numerically identical RNG algorithms
+     and call sequences — they don't. This means **early positions are the
+     *least* informative** for judging correctness; if the set-overlap count is
+     healthy and the *later* proposals in both paths visibly cluster around the
+     same region, that is the meaningful signal, not early-position agreement.
 5. This 0.25%-fraction run is **not** directly comparable in MAE terms to
    Experiment 4's 100%-data-Optuna numbers (805.730 at 100% data) — different
    data size, different landscape, as this project has established repeatedly.
