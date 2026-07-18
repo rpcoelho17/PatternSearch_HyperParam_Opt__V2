@@ -224,6 +224,11 @@ class Climber:
         return True, best_p, best_s
 
     # ---- move bookkeeping & the bullseye (spec 5.1) -----------------------
+    # NOTE: this warmup/calibration/zone logic has been re-derived as a
+    # standalone, reusable BullseyeController (_fidelity.py) for
+    # BayesHalvingSearchCV. Climber is deliberately NOT refactored to use it
+    # (scope control, BayesHalvingSearchCV_SPEC.md sec 6) - a future cleanup
+    # could unify them once both paths are well-exercised in production.
     def _commit_move(self, new_pos, new_score, kind):
         move = self.space.distance(self.best, new_pos)
         self.position = new_pos
