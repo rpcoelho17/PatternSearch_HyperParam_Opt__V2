@@ -897,7 +897,10 @@ reference rows in `BayesHalvingSearchCV_SPEC.md` §0.
 
 | | Optuna GP, 100% data (Exp. 4) | PatternSearchCV, defaults (this run) | **BayesHalvingSearchCV** (this run) |
 |---|---|---|---|
-| evaluations | 15 | 22 | 28 |
+| total evaluations | 15 | 22 | 28 |
+| fits @ 0.5% (2,093 rows) | — | 17 | 17 |
+| fits @ 10% (41,842 rows) | — | 0 | 8 |
+| fits @ 100% (418,416 rows) | 15 | **5** | **3** |
 | full-fit equivalents | 15.00 | 5.09 | **3.89** |
 | best point | (4,150,17)-class | (4, 130, 17) | (4, 150, 17) |
 | best CV MAE | 805.730 | 805.038 | 805.730 |
@@ -927,6 +930,39 @@ in this exact basin reliably, this reads as expected single-seed,
 single-start noise between two different search algorithms rather than a
 search-quality gap — the `n_starts=4` follow-up arm (spec §10, optional,
 not yet run) would be the way to confirm that.
+
+**Follow-up (2026-07-18): why does PatternSearchCV have fewer total fits
+(22 vs 28) but higher full-fit equivalents (5.09 vs 3.89)?** Re-ran the
+exact, deterministic PatternSearchCV arm (`random_state=0` reproduces the
+identical 22 evals / 805.038 result) to capture the per-tier breakdown that
+wasn't printed the first time — see the table above. `equiv = Σ (n_resources_i
+/ n_samples)`: PatternSearchCV = 17×0.005 + 5×1.0 = 0.085 + 5.00 = **5.085**;
+BayesHalvingSearchCV = 17×0.005 + 8×0.1 + 3×1.0 = 0.085 + 0.80 + 3.00 =
+**3.885**. PatternSearchCV put 5 of its 22 fits (23%) at full data — 98% of
+its total cost — while BayesHalvingSearchCV put only 3 of its 28 (11%),
+capped at exactly `promote_k`.
+
+The mechanism, verified against `_climber.py`: PatternSearchCV's actual run
+never touched the 1% or 10% rungs at all. This is not luck — once the
+search mesh contracts to its floor step size while still below full data,
+`Climber`'s convergence logic has a hard-coded rule forcing a jump straight
+to `len(self.zones) - 1` (the *last* zone, i.e. 100%), skipping every
+intermediate rung on purpose (`reason="forced-final-polish"`). Re-running
+with `search_history_` printed (note: this only logs *confirmed improving
+moves*, not every probe, unlike BayesHalvingSearchCV's per-trial ledger)
+shows exactly this: start `(3,130,11)` → one improving move to `(4,130,17)`
+at 0.5% → forced jump straight to 100% for the polish rescore (805.038) →
+4 more full-data fits (each a confirmatory sweep probe) before the "3
+consecutive failed sweeps" convergence rule was satisfied. Each of those
+extra confirmatory probes costs a full 1.0 equivalent, because Hooke-Jeeves'
+patient contraction re-confirms convergence *at whatever tier it's
+currently on* — and here that tier is the most expensive one.
+BayesHalvingSearchCV's final-polish step, by contrast, is budget-capped by
+design: it re-scores exactly the top `promote_k` candidates at 100% once
+and stops, rather than re-sweeping at full data until it's convinced. The
+gap isn't about total work done — it's that PatternSearchCV's convergence
+check is willing to pay full price repeatedly to be sure it's finished,
+while BayesHalvingSearchCV's polish step has a hard ceiling on that cost.
 
 ---
 
