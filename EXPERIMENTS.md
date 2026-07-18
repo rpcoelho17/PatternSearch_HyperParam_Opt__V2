@@ -1010,3 +1010,38 @@ side-analysis's real, measured coverage gap. What this experiment does show
 is that `stratified`'s coverage guarantee is not *load-bearing* for this
 specific search/grid/seed at 0.2% — a useful, honest negative result, not
 the confirmation the theory predicted.
+
+**Follow-up side-analysis: is the tie/win actually leakage, not luck?**
+(not a `PatternSearchCV` search run — same "isolate the mechanism cheaply"
+methodology as the store-coverage side-analysis above). Given row-index is
+store-block position on this dataset, a plausible leakage mechanism exists:
+if `random`'s sampled rows put the same stores in both train and test more
+often than `stratified`'s do, the model could partly memorize per-store
+baseline sales instead of genuinely generalizing, inflating (lowering) its
+CV score without earning it. Directly measured using the exact
+`stratified_order`/`random_order` calls and the exact `ZoneSplitter` the
+real search uses, on the same 837-row (0.2%) zone, `random_state=0`:
+
+1. **Train/test store overlap per fold**: `stratified` — 0.0% in all 5
+   folds. `random` — 0.0–1.4% (1 store out of 68–102, in 2 of 5 folds). No
+   meaningful overlap under either sampler — `TimeSeriesSplit` is already
+   splitting by near-disjoint store sets regardless of the sampling method
+   (consistent with the store-blocked-CSV finding above), so the classic
+   leakage mechanism (same entity in train and test) isn't in play for
+   either arm.
+2. **Real per-fold MAE, winning config (4,130,17), same rows a live search
+   would score**: `stratified` = [1153.95, 928.32, 1006.80, 979.84, 901.36],
+   mean **994.056**. `random` = [1127.74, 912.55, 1039.01, 959.48, 829.05],
+   mean **973.567** — random *is* ~20 points (2%) more optimistic on this
+   exact config, same direction as the full search's result.
+
+**Conclusion: not classic leakage — the overlap check rules out the
+specific mechanism that would justify that word — but the optimism is real
+and measured, not imagined.** With zero train/test store overlap under
+either sampler, the ~20-point gap reads as ordinary sampling variance: seed
+0's particular 837-row draw happened to land on a slightly easier split for
+this config (fewer noisy folds), not test information reaching train. This
+is a single-config check, though — it doesn't rule out a real generalization
+gap becoming visible on other configs or other seeds. The multi-seed
+follow-up above remains the way to settle whether Experiment 14's result
+generalizes.
