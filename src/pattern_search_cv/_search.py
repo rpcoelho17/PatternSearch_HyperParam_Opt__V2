@@ -14,7 +14,6 @@ from copy import deepcopy
 from numbers import Integral
 
 import numpy as np
-from scipy.stats import qmc
 from sklearn.model_selection._search import BaseSearchCV
 from sklearn.utils import check_random_state, get_tags
 from sklearn.utils.validation import _num_samples
@@ -23,6 +22,7 @@ from ._climber import Climber
 from ._engine import Engine
 from ._sampling import ZoneSplitter, expanding_order, random_order, stratified_order
 from ._space import Space
+from ._starts import select_starts
 
 logger = logging.getLogger("pattern_search_cv")
 
@@ -306,40 +306,10 @@ class PatternSearchCV(BaseSearchCV):
         return handler
 
     def _select_starts(self, space, rng):
-        starts = []
-        if self.start_points:
-            for p in self.start_points:
-                idx = space.indices(p)
-                if idx not in starts:
-                    starts.append(idx)
-            starts = starts[: self.n_starts]
-        if len(starts) < self.n_starts:
-            mid = space.midpoint()
-            if mid not in starts:
-                starts.append(mid)
-        if len(starts) < self.n_starts:
-            # QMC candidate pool, then greedy maximin selection
-            active = space.active
-            seed = rng.randint(np.iinfo(np.int32).max)
-            sampler = qmc.LatinHypercube(d=max(1, len(active)), seed=seed)
-            pool_u = sampler.random(10 * self.n_starts)
-            pool = set()
-            for row in pool_u:
-                idx = list(space.midpoint())
-                for j, dim_i in enumerate(active):
-                    n = space.dims[dim_i].n
-                    idx[dim_i] = min(n - 1, int(row[j] * n))
-                pool.add(tuple(idx))
-            pool -= set(starts)
-            pool = sorted(pool)  # determinism
-            while len(starts) < self.n_starts and pool:
-                best_p = max(
-                    pool,
-                    key=lambda p: min(space.distance(p, s) for s in starts),
-                )
-                starts.append(best_p)
-                pool.remove(best_p)
-        return starts[: self.n_starts]
+        # Shared with BayesHalvingSearchCV (BayesHalvingSearchCV_SPEC.md §2.1):
+        # logic lives in _starts.select_starts so both estimators use one
+        # implementation, not two that could silently drift.
+        return select_starts(space, self.n_starts, self.start_points, rng)
 
     # ------------------------------------------------------------ search
     def _run_search(self, evaluate_candidates, **kwargs):
