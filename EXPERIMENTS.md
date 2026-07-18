@@ -1074,4 +1074,87 @@ either sampler, the ~20-point gap reads as ordinary sampling variance: seed
 0's particular 837-row draw happened to land on a slightly easier split for
 this config (fewer noisy folds), not test information reaching train. This
 is a single-config check, though — it doesn't rule out a real generalization
-gap becoming visible on other configs or other seeds.
+gap becoming visible on other configs or other seeds. The multi-seed
+follow-up above remains the way to settle whether Experiment 14's result
+generalizes.
+
+---
+
+## Experiment 15 — Low-data stress test: PatternSearchCV (eager) vs BayesHalvingSearchCV, and stratified vs random with seed 42 (2026-07-18/19, done)
+
+Notebook: `LowData_Stress_PSCeager_BHS_Random42.ipynb`. Zones `[0.15%, 0.20%,
+2%, 100%]` — one rung below Experiment 14's 0.2% floor. Two comparisons in
+one run, `verbose=2` on every arm (full per-decision log saved in the
+notebook), `n_starts=1`, official grid, `TimeSeriesSplit(5)`, MAE:
+
+1. `PatternSearchCV(contraction="eager", subsample="stratified", random_state=0)`
+   vs `BayesHalvingSearchCV(subsample="stratified", random_state=0, n_iter=25, promote_k=3)`.
+2. `PatternSearchCV(contraction="eager", subsample="stratified", random_state=0)`
+   vs `PatternSearchCV(contraction="eager", subsample="random", random_state=42)`
+   — Experiment 14 (seed 0) found `random` tied `stratified`; this repeats
+   the test with a different seed at a more aggressive floor.
+
+**Results**
+
+| | PSC eager / stratified | BayesHalvingSearchCV / stratified | PSC eager / random (seed=42) |
+|---|---|---|---|
+| total evaluations | 30 | 28 | 31 |
+| fits @ 0.15% (628 rows) | 20 | 25 | 11 |
+| fits @ 0.20% (837 rows) | 0 | 0 | 7 |
+| fits @ 2% (8,369 rows) | 0 | 0 | 7 |
+| fits @ 100% (418,416 rows) | **10** | **3** | 6 |
+| full-fit equivalents | **10.030** | 3.038 | 6.171 |
+| wall-clock | 2105.2 s | 922.5 s | 1781.3 s |
+| best point | (4, 130, 17) | (4, 140, 15) | (4, 170, 17) |
+| best CV MAE | **805.038** | **866.197** | 807.968 |
+
+**Finding 1 — PatternSearchCV (eager) found the true optimum here;
+BayesHalvingSearchCV did not.** PSC eager/stratified landed exactly on this
+project's known optimum (805.038). BayesHalvingSearchCV converged to a
+materially worse point (866.197, +7.6% MAE) — the first time in this
+project's history either estimator has landed meaningfully off the known
+optimum basin rather than an adjacent grid point. Its own verbose log shows
+why: `BullseyeController calibrated: readings=[0.2054, 0.2968] mean=0.2511
+D=0.2400 boundaries=[0.16, 0.08, 0.04]`. GP-EI's proposals are global (any
+grid point can be the next suggestion), so its early incumbent-improving
+moves were large in normalized-distance terms (~0.21–0.30) — calibrating
+wide ring boundaries. None of its subsequent 25 proposals at the 0.15% zone
+ever produced a displacement below the innermost boundary (0.16), so
+`zone_i` never left 0: it spent its entire `n_iter=25` budget at the
+cheapest tier, then ran the mandatory 3-fit `promote_k` polish at 100% —
+which wasn't enough to recover, since the top-3 candidates it promoted were
+themselves ranked using only 0.15%-fraction scores. This contrasts with
+`PatternSearchCV`'s Hooke-Jeeves search, whose local mesh-contraction moves
+are small and localized by construction, so its bullseye ring-crossing logic
+engages differently (in this run, it never triggered a ring crossing either
+— it skipped straight to 100% via the same `forced-final-polish` mesh-floor
+rule seen in Experiment 13 — but its convergence check keeps re-confirming
+*at full data* until 3 consecutive full-data sweeps fail, which is what
+actually found and validated the true optimum here).
+
+**Finding 2 — this also means the aggressive 0.15% floor made
+PatternSearchCV *more* expensive, not less.** PSC eager/stratified's 10.030
+full-fit equivalents is nearly double Experiment 13's patient run at 0.5%
+starting data (5.09 equiv) and Experiment 14's eager run at 0.2% (5.06
+equiv) — the lower starting fraction meant more full-data confirmation fits
+were needed (10 vs 5), each costing a full 1.0 equivalent, more than
+offsetting any savings from the cheaper exploration phase.
+
+**Finding 3 — PSC eager/random with seed 42 landed close to, but
+measurably off, the true optimum, and behaved differently from both
+`stratified` arms.** (4, 170, 17), MAE 807.968 — a real but modest 0.36%
+relative gap from 805.038, and a different (n_estimators, max_depth) pair
+entirely. Unlike either `stratified` arm, this run actually touched every
+rung of the ladder (11/7/7/6 across the four tiers) rather than skipping
+straight to 100% — a qualitatively different mesh trajectory under this
+seed. Within this same experiment (same ladder, same contraction, only
+`subsample`+seed differing), `stratified` found the exact known optimum
+while `random` (seed 42) did not — the opposite of Experiment 14's result
+(seed 0, tied exactly), though the two runs also differ in starting
+fraction (0.15% vs 0.2%) and aren't a fully isolated single-variable
+comparison of seed alone.
+
+**Who broke first, in this specific run: BayesHalvingSearchCV, by the
+largest margin (+7.6% MAE); PSC eager/random(42) second (+0.36% MAE);
+PSC eager/stratified did not break (found the exact known optimum, at
+nearly double the usual compute cost).**
