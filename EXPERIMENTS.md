@@ -927,3 +927,86 @@ in this exact basin reliably, this reads as expected single-seed,
 single-start noise between two different search algorithms rather than a
 search-quality gap — the `n_starts=4` follow-up arm (spec §10, optional,
 not yet run) would be the way to confirm that.
+
+---
+
+## Experiment 14 — Does `subsample='random'` actually break at 0.2%, where coverage theory predicts it should? (2026-07-18, done)
+
+Notebook: `PE_Stratified_vs_Random_0.2_0.3_0.5_100.ipynb`. Direct test of the
+theory from "Why stratified sampling has actually been winning" (above): a
+side-analysis (not a search run) measured that at 0.2%, `stratified`
+guarantees 601/601 store coverage while true random sampling averages only
+448.1/601 across 20 seeds (worst seed 433) — predicting an actual search
+using `subsample='random'` should start losing to `stratified` below ~0.5%.
+No search had ever been run with `subsample='random'` on this dataset before
+this experiment. Zones `[0.2%, 0.3%, 0.5%, 100%]` — one rung below
+Experiment 11's 0.25% floor, `random_state=0`, `poll='opportunistic'`
+explicit, `verbose=0`. Three arms: PATIENT/stratified, EAGER/stratified (the
+usual P/E pair), and PATIENT/random (single seed, this project's standard
+convention — the comparison arm).
+
+**Results**
+
+| | PATIENT/stratified | EAGER/stratified | PATIENT/random |
+|---|---|---|---|
+| evaluations | 31 | 29 | 27 |
+| full-fit equivalents | 5.07 | 5.06 | **5.07** |
+| wall-clock | 1168.0 s | 1160.9 s | 910.0 s |
+| summed fit work | 2945.3 s | 2993.7 s | 2290.3 s |
+| best point | (4, 130, 17) | (4, 130, 17) | **(4, 130, 17)** |
+| best CV MAE | 805.038 | 805.038 | **805.038** |
+| zones used (rows) | [837, 2093, 418416] | [837, 2093, 418416] | [837, 2093, 418416] |
+
+Shared evaluations, PATIENT/stratified vs PATIENT/random: 21 of 31/27 —
+substantial path overlap, not two unrelated searches.
+
+**Finding: the theory did NOT hold up in this test — `subsample='random'`
+did not break at 0.2%.** All three arms converged to the exact same optimum
+(4, 130, 17) at the exact same MAE (805.038) and essentially the same
+full-fit equivalents (5.06–5.07). `PATIENT/random` used *fewer* evaluations
+(27 vs 31) and less wall-clock (910.0s vs 1168.0s) than its matched
+`PATIENT/stratified` arm — the opposite direction from what the coverage
+numbers predicted, though within this project's ~15–25% wall-clock noise
+floor, so not claimed as a real speed advantage either.
+
+Also notable: none of the three arms ever evaluated at the 0.3% (1,255-row)
+rung — all jumped straight from 0.2% to 0.5%. This is expected bullseye
+behavior, not a bug: `_zone_for` finds the innermost ring boundary a
+displacement falls below in one step, so a single confident move can cross
+two ring boundaries at once and skip the middle rung entirely; it happened
+identically in all three arms, so it isn't a `stratified`-vs-`random`
+effect.
+
+**Why the coverage theory's prediction didn't materialize here — read with
+real caveats, not as a refutation:**
+1. **Single seed.** This is one draw of `subsample='random'` (`random_state=0`).
+   The coverage side-analysis showed real seed-to-seed variance at 0.2%
+   (448.1 average, 433 worst, across 20 seeds) — seed 0 may simply have
+   landed on a lucky draw for this specific 837-row sample. The coverage
+   theory was never a claim about every seed; a genuinely unlucky seed could
+   still show degradation. This result does not rule that out — it rules out
+   only "random reliably breaks regardless of seed," which was never
+   precisely the claim either.
+2. **The search algorithm has its own self-correction the coverage count
+   doesn't model.** `stratified`/`random` only shape the ranking signal at
+   the *smallest* zone; PatternSearchCV's mesh contraction and ratcheted
+   zone growth mean a temporarily noisy small-sample signal doesn't have to
+   be trusted forever — the search keeps moving and re-scores at larger
+   zones as soon as displacement calms down. A store-coverage count measures
+   a property of the *sample*, not of the *search outcome* after that
+   self-correcting machinery has had a chance to run.
+3. **ExtraTreesRegressor is itself heavily randomized** (bootstrap +
+   per-split feature randomization) — some of the ranking noise a
+   lower-coverage sample would introduce may already be within the range the
+   estimator's own internal randomness routinely produces, especially for
+   the coarse win/lose comparisons a pattern-search sweep actually needs
+   (not a precise ranking, just "did this move help").
+
+**Open follow-up, not yet run:** repeat the `subsample='random'` arm across
+multiple seeds (the "multi-seed variance bands" item already in
+`OpenQuestions.md`) before concluding coverage doesn't matter to search
+outcomes at all — one seed, however clean, is not enough to overturn the
+side-analysis's real, measured coverage gap. What this experiment does show
+is that `stratified`'s coverage guarantee is not *load-bearing* for this
+specific search/grid/seed at 0.2% — a useful, honest negative result, not
+the confirmation the theory predicted.
