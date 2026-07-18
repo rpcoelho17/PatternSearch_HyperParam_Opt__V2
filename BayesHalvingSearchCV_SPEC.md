@@ -214,6 +214,15 @@ class BayesHalvingSearchCV(BaseSearchCV):
                  start_points=None):
 ```
 
+**Hard rule, verified against `PatternSearchCV.__init__` (`_search.py` line 127):
+`__init__` does NOTHING but call `super().__init__(...)` and assign every
+remaining argument to `self.<name>` verbatim.** No validation, no `Space`
+construction, no defaults resolution (e.g. do not resolve `data_zones="auto"`-style
+shorthand here). All of that happens in `_prepare_run`, called from `fit`, exactly
+where `PatternSearchCV` does it. This is required for `clone()`,
+`get_params()`/`set_params()`, and `parametrize_with_checks` (test #16) to pass —
+it is not a style preference.
+
 ### 3.1 Search space — mandatory: identical standard to `PatternSearchCV`
 
 - `param_grid`: **exactly** the same accepted forms as `PatternSearchCV.param_grid`
