@@ -1294,6 +1294,57 @@ from the saved processed CSV (`train_processed_dayflags_stratify.csv`,
 Directly comparable to Experiment 13 (identical ladder, grid, estimators) —
 the only difference is a real vs. degenerate stratified sampler.
 
+**Point of this experiment**: `stratified_order`'s transition-detection
+logic (novel-combination-first, then alternating boundary/midpoint picks,
+then bit-reversed thinning of whatever's left) was designed to prioritize
+rows at genuine behavioral *changes* — but on this dataset it had never
+actually exercised that logic in any experiment run so far, because every
+row looked "novel" to it (near-continuous weather values mean almost no two
+rows are byte-identical), collapsing it to the bit-reversed fallback alone
+— an *even, arbitrary spread across row-index*, not a genuine
+transition-aware sample. This experiment tests whether giving the sampler
+only genuinely repeating, low-cardinality columns to watch (so it can
+actually detect real multi-row runs and alternate at real transitions)
+changes search outcomes versus that even-spread degenerate behavior.
+
+**All columns in this dataset, and which were excluded from what — two
+separate exclusions, not to be conflated**:
+
+1. **Dropped from the dataset entirely** (same standard pipeline step used
+   in every experiment in this log, unrelated to this experiment):
+   `Max_Gust_SpeedKm_h`, `CloudCover`, `Max_VisibilityKm`,
+   `Min_VisibilitykM`, `Mean_VisibilityKm` (5 columns — the prototype's own
+   original drop list).
+2. **Remaining 30 feature columns** (all still used to train the model,
+   every experiment including this one): `AssortmentType`, `Date`,
+   `Events`, `HasPromotions`, `IsHoliday`, `IsOpen`, `Max_Dew_PointC`,
+   `Max_Humidity`, `Max_Sea_Level_PressurehPa`, `Max_TemperatureC`,
+   `Max_Wind_SpeedKm_h`, `Mean_Dew_PointC`, `Mean_Humidity`,
+   `Mean_Sea_Level_PressurehPa`, `Mean_TemperatureC`, `Mean_Wind_SpeedKm_h`,
+   `Min_Dew_PointC`, `Min_Humidity`, `Min_Sea_Level_PressurehPa`,
+   `Min_TemperatureC`, `NearestCompetitor`, `NumberOfCustomers`,
+   `Precipitationmm`, `Region`, `Region_AreaKM2`, `Region_GDP`,
+   `Region_PopulationK`, `StoreID`, `StoreType`, `WindDirDegrees`.
+3. **Of those 30, only 3 were watched by the sampler this run**
+   (`subsample_columns=['HasPromotions', 'IsHoliday', 'IsOpen']`) — the
+   other **27 were excluded from what the sampler watches only**, while
+   remaining full model features exactly as before. This is not a feature
+   removal — the model still sees and trains on all 30 columns; only
+   `stratified_order`'s own run-detection was narrowed to the 3 columns
+   that actually measured real repeat structure (2.5 rows/run avg),
+   instead of watching all 30 (1.0 rows/run avg, degenerate).
+
+**Settings**: official grid (`max_features∈{2,3,4}`,
+`n_estimators∈{10..260 step 10}`, `max_depth∈{5..17}`),
+`scoring="neg_mean_absolute_error"`, `cv=TimeSeriesSplit(5)`,
+`data_zones=(0.005, 0.01, 0.1, 1.0)` (package default),
+`subsample="stratified"`, `subsample_columns=['HasPromotions','IsHoliday','IsOpen']`,
+`random_state=0`, `n_starts=1`, `verbose=2` on both arms.
+`PatternSearchCV` used its shipped default `contraction="patient"` (not
+eager — no `contraction` argument was passed). `BayesHalvingSearchCV` used
+its defaults, `n_iter=25`, `promote_k=3`. Data loaded from the saved
+processed CSV rather than re-deriving from raw `train.csv`.
+
 **Results**
 
 | | PatternSearchCV (patient, defaults) | BayesHalvingSearchCV |
@@ -1307,9 +1358,14 @@ the only difference is a real vs. degenerate stratified sampler.
 | best point | (4, 130, 17) | **(4, 130, 17)** |
 | best CV MAE | 805.038 | **805.038** |
 
-Reference, Experiment 13 (degenerate/all-column stratification, identical
-ladder): PatternSearchCV 22 evals, 5.09 equiv, best (4,130,17), MAE 805.038.
-BayesHalvingSearchCV 28 evals, 3.89 equiv, best (4,150,17), MAE **805.730**.
+**Comparison against the even-spread (degenerate) sampling strategy** —
+Experiment 13, identical ladder/grid/estimators, `subsample_columns`
+unset (all 30 columns watched, collapsing to the bit-reversed
+even-across-row-index fallback, 1.0 rows/run): PatternSearchCV 22 evals,
+5.09 equiv, best (4,130,17), MAE 805.038 — *unchanged* by the sampler fix.
+BayesHalvingSearchCV 28 evals, 3.89 equiv, best (4,150,17), MAE
+**805.730** — the real-transition-aware sampler in this experiment fixed
+this miss and lowered its cost to 3.125 equivalents.
 
 **Finding: real stratification fixed BayesHalvingSearchCV's only real miss
 in this project's history, and made it cheaper too.** With the degenerate
