@@ -1192,9 +1192,11 @@ better**. The bolded cell and the `argmin` column mark which value looked
 best *at that fraction*; that's "faithful" only when it matches the
 100%-fraction row's answer.
 
-**max_features axis (n_estimators=130, max_depth=17 fixed)**
+**max_features axis (n_estimators=130, max_depth=17 fixed) — every cell
+below is a cross-validated MAE (mean absolute error, lower = better); the
+column headers are the `max_features` value that produced that MAE**
 
-| fraction | 2 | 3 | 4 | argmin |
+| data fraction | MAE @ max_features=2 | MAE @ max_features=3 | MAE @ max_features=4 | best max_features at this fraction |
 |---|---|---|---|---|
 | 0.15% | 1249.1 | 1131.8 | **1015.3** | 4 |
 | 0.20% | 1252.6 | 1098.0 | **994.1** | 4 |
@@ -1206,11 +1208,14 @@ best *at that fraction*; that's "faithful" only when it matches the
 | 10% | 1041.9 | 921.1 | **818.0** | 4 |
 | 100% | 1015.2 | 907.6 | **805.0** | 4 |
 
-Perfectly faithful at every fraction tested — `4` wins from 0.15% to 100%.
+Perfectly faithful at every fraction tested — `max_features=4` has the
+lowest (best) MAE in every single row, from 0.15% all the way to 100%.
 
-**n_estimators axis (max_features=4, max_depth=17 fixed)**
+**n_estimators axis (max_features=4, max_depth=17 fixed) — same reading:
+every cell is a cross-validated MAE for that `n_estimators` value at that
+data fraction, lower = better**
 
-| fraction | 10 | 30 | 50 | 70 | 90 | 110 | 130 | 150 | 170 | 190 | 210 | 230 | 250 | argmin |
+| data fraction | MAE @ n_estimators=10 | 30 | 50 | 70 | 90 | 110 | 130 | 150 | 170 | 190 | 210 | 230 | 250 | best n_estimators |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 0.15% | 1204.2 | 1099.7 | 1047.3 | 1035.7 | 1023.8 | 1026.9 | **1015.3** | 1022.2 | 1020.9 | 1019.7 | 1026.2 | 1026.1 | 1027.2 | 130 |
 | 0.20% | 1164.7 | 1097.2 | 1029.3 | 1018.0 | 1003.2 | 1008.8 | **994.1** | 998.1 | 999.4 | 1005.0 | 1009.3 | 1010.2 | 1013.3 | 130 |
@@ -1222,15 +1227,17 @@ Perfectly faithful at every fraction tested — `4` wins from 0.15% to 100%.
 | 10% | 881.3 | 861.3 | 837.0 | 832.9 | 823.8 | 826.3 | **818.0** | 818.0 | 818.3 | 821.8 | 824.7 | 827.6 | 830.5 | 130 |
 | 100% | 879.9 | 851.7 | 817.4 | 815.7 | 809.3 | 812.2 | **805.0** | 805.7 | 808.0 | 812.4 | 814.7 | 815.4 | 818.1 | 130 |
 
-Also perfectly faithful — `130` wins at every fraction, despite a visibly
-bumpier curve than `max_features`'s.
+Also perfectly faithful — `n_estimators=130` has the lowest MAE in every
+row, despite a visibly bumpier curve than `max_features`'s.
 
-**max_depth axis (max_features=4, n_estimators=130 fixed) — the fragile one**
+**max_depth axis (max_features=4, n_estimators=130 fixed) — the fragile
+one. Same reading: every cell is a cross-validated MAE for that
+`max_depth` value at that data fraction, lower = better**
 
-| fraction | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | argmin |
+| data fraction | MAE @ max_depth=5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | best max_depth |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **0.15%** | 1254.8 | 1171.4 | 1127.3 | 1099.0 | 1065.8 | 1044.0 | 1035.7 | 1016.8 | 1020.1 | **1008.5** | 1016.1 | 1025.3 | 1015.3 | **14 (WRONG)** |
-| **0.20%** | 1267.5 | 1218.3 | 1161.5 | 1110.8 | 1077.8 | 1057.9 | 1029.0 | 1019.8 | 1000.6 | 999.6 | 993.9 | **987.6** | 994.1 | **16 (WRONG)** |
+| **0.15%** | 1254.8 | 1171.4 | 1127.3 | 1099.0 | 1065.8 | 1044.0 | 1035.7 | 1016.8 | 1020.1 | **1008.5** | 1016.1 | 1025.3 | 1015.3 | **14 (WRONG — true best is 17)** |
+| **0.20%** | 1267.5 | 1218.3 | 1161.5 | 1110.8 | 1077.8 | 1057.9 | 1029.0 | 1019.8 | 1000.6 | 999.6 | 993.9 | **987.6** | 994.1 | **16 (WRONG — true best is 17)** |
 | 0.30% | 1267.1 | 1205.4 | 1144.6 | 1096.9 | 1065.3 | 1027.7 | 1019.8 | 979.7 | 974.4 | 969.5 | 969.1 | 962.6 | **960.0** | 17 |
 | 0.50% | 1316.9 | 1255.1 | 1177.5 | 1132.1 | 1078.2 | 1053.2 | 1015.8 | 992.0 | 976.8 | 968.8 | 955.4 | 957.3 | **944.6** | 17 |
 | 1% | 1296.7 | 1221.7 | 1163.1 | 1114.8 | 1057.6 | 1023.4 | 988.5 | 952.6 | 926.5 | 916.6 | 902.6 | 886.7 | **879.6** | 17 |
@@ -1238,6 +1245,11 @@ bumpier curve than `max_features`'s.
 | 5% | 1303.1 | 1240.4 | 1167.7 | 1105.2 | 1064.3 | 1018.5 | 978.8 | 948.0 | 916.8 | 887.1 | 875.3 | 844.3 | **835.2** | 17 |
 | 10% | 1303.8 | 1235.2 | 1165.2 | 1103.7 | 1072.6 | 1022.1 | 983.4 | 947.6 | 915.3 | 878.3 | 858.5 | 835.6 | **818.0** | 17 |
 | 100% | 1318.1 | 1252.7 | 1188.5 | 1144.1 | 1082.0 | 1039.3 | 1009.3 | 961.4 | 933.5 | 887.2 | 863.9 | 831.1 | **805.0** | 17 |
+
+Reading the 100% row (the ground truth) confirms `max_depth=17` really is
+best (MAE 805.0, the lowest in that row) — but at 0.15% and 0.20%, a
+*different* depth's MAE happens to dip lower than depth=17's, which is
+exactly the kind of small-sample noise that misled Experiment 15's search.
 
 **Finding: of the three grid axes, only `max_depth` is fragile at low data
 fractions, and its faithfulness floor is precisely 0.30%.** `max_features`
