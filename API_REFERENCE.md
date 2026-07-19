@@ -210,15 +210,19 @@ Experiment 15 for a real, measured case of exactly this happening).
 
 **One more thing worth knowing before you rely on this**: the
 transition-detection logic only helps if `subsample_columns` actually points
-at genuinely repeating, low-cardinality columns. Watching *every* column
-(the default when `subsample_columns` is left unset) can silently degrade
-the sampler to a plain even-spread fallback if your data has any
+at genuinely repeating, low-cardinality columns. If your data has any
 near-continuous columns (like raw sensor or weather readings) that make
-almost every row look unique — see Experiment 17 for a real before/after
-case where narrowing `subsample_columns` to just the meaningful flags
-measurably improved search outcomes. `subsample_columns` is provided
-specifically so you can point the sampler only at the columns that actually
-carry repeatable structure.
+almost every row look unique, watching *every* column (the default when
+`subsample_columns` is left unset) will change the behavior of the sampler
+to selecting evenly-spread data points over the entire dataset — this will
+create a "mini" dataset that is evenly spread over the entire population,
+rather than one built from genuine transitions. That fallback is still a
+principled, low-discrepancy sample (not a broken one), but it isn't the
+transition-aware sample the sampler is capable of — see Experiment 17 for a
+real before/after case where narrowing `subsample_columns` to just the
+meaningful flags measurably improved search outcomes. `subsample_columns`
+is provided specifically so you can point the sampler at the columns that
+actually carry repeatable structure and unlock that behavior.
 
 ---
 
