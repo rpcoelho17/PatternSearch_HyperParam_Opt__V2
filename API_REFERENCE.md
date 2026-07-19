@@ -208,21 +208,19 @@ that narrow slice and don't hold up once the full data confirms them (see
 `EXPERIMENTS.md`'s "Why stratified sampling has actually been winning" and
 Experiment 15 for a real, measured case of exactly this happening).
 
-**One more thing worth knowing before you rely on this**: the
-transition-detection logic only helps if `subsample_columns` actually points
-at genuinely repeating, low-cardinality columns. If your data has any
-near-continuous columns (like raw sensor or weather readings) that make
+**NOTE**: the transition-detection logic has a different behavior if `subsample_columns` points at repeating, low-cardinality columns or at columns that have changing values in every row. 
+If your data has any near-continuous columns (like raw sensor or weather readings) that make
 almost every row look unique, watching *every* column (the default when
 `subsample_columns` is left unset) will change the behavior of the sampler
 to selecting evenly-spread data points over the entire dataset — this will
-create a "mini" dataset that is evenly spread over the entire population,
-rather than one built from genuine transitions. That fallback is still a
+create a "mini" dataset that is evenly spread over the entire population. That fallback is still a
 principled, low-discrepancy sample (not a broken one), but it isn't the
 transition-aware sample the sampler is capable of — see Experiment 17 for a
 real before/after case where narrowing `subsample_columns` to just the
-meaningful flags measurably improved search outcomes. `subsample_columns`
+meaningful flags slightly improved search outcomes for the Bayesian search. `subsample_columns`
 is provided specifically so you can point the sampler at the columns that
-actually carry repeatable structure and unlock that behavior.
+actually carry repeatable structure and unlock the feature value aware transition behavior
+(picks the row when the value of a feature changes from let's say 'A' to 'B').
 
 ---
 
