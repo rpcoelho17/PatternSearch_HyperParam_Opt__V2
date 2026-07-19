@@ -56,7 +56,7 @@ reference, Experiment 4 as the measured one.
 
 ## Experiment 1 — New `PatternSearchCV`, default configuration (2026-07-13)
 
-Notebook: `experiments/Prototype_Replication.ipynb` (executed; full logs inside).
+Notebook: `Prototype_Replication.ipynb` (executed; full logs inside).
 
 **Configuration**: defaults — 1 start (grid midpoint), data zones 10/20/50/100%,
 `warmup=3`, `subsample='auto'` → **expanding** (oldest rows first, because CV is
@@ -1279,7 +1279,7 @@ directly.
 
 ## Experiment 17 — Real stratification (day-flags only) fixes BayesHalvingSearchCV's Experiment 13 miss (2026-07-19, done)
 
-Notebook: `experiments/RealStratified_BHS_vs_PSC.ipynb`. Every prior experiment's
+Notebook: `RealStratified_BHS_vs_PSC.ipynb`. Every prior experiment's
 `subsample='stratified'` watched *all* columns, including the near-continuous
 weather columns, which makes almost every row unique and silently degrades
 the sampler to pure bit-reversal (1.0 rows/run — the transition-detection
