@@ -343,7 +343,7 @@ Modes (`subsample=`):
   (quarters, eighths, ...) to fill large budgets. Over-budget levels are thinned
   **evenly across time** (every k-th, never truncated) so all seasons stay represented.
   Watches **all columns by default** (post-feature-selection columns are all meaningful);
-  `subsample_columns` narrows optionally. Degenerate case (a continuous column changes
+  `subsample_columns` narrows optionally. Even Sampling case (a continuous column changes
   every row): collapses gracefully to systematic every-k-th sampling. One O(n) vectorized
   pass: `(X[1:] != X[:-1]).any(axis=1)` and follow-on numpy ops — no compiled extension
   needed (~ms at 500K x 30 vs minutes per fit).

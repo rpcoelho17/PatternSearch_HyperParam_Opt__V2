@@ -268,7 +268,6 @@ Also first exercise of a 4-zone ladder starting at 5% (~20.9K rows).
 | full-fit equivalents | 9.75 | 9.75 |
 | wall-clock | 1552.3 s | 1769.4 s |
 | **P/E wall-clock ratio** | | **0.877** |
-| summed fit work | 4422.9 s | 5091.3 s |
 | best point | (4, 230, 17) | (4, 230, 17) |
 | best CV MAE | 815.373 | 815.373 |
 | zones used | 5% and 100% | 5% and 100% |
@@ -318,7 +317,7 @@ rung (oldest ~5 weeks) misleads the search to (4, 230, 17) / MAE 815.373 at
 (4, 150, 17) / 805.730 optimum? This is the transition sampler's first outing
 on real data — note that with continuous weather columns among the 30 watched
 features, most rows are transitions, so the sampler is expected to operate
-near its designed degenerate mode: systematic full-timeline sampling (all
+near its designed Even Sampling mode: systematic full-timeline sampling (all
 seasons represented, unlike expanding's oldest-first prefix).
 
 **Results**
@@ -329,7 +328,6 @@ seasons represented, unlike expanding's oldest-first prefix).
 | full-fit equivalents | 5.85 | 5.85 |
 | wall-clock | 599.7 s | 576.6 s |
 | **P/E wall-clock ratio** | | **1.040** |
-| summed fit work | 1559.8 s | 1594.2 s |
 | best point | **(4, 130, 17)** | **(4, 130, 17)** |
 | best CV MAE | **805.038** | **805.038** |
 | zones used | 5% and 100% | 5% and 100% |
@@ -390,7 +388,6 @@ sampler's reliability floor (à la Experiment 6's *expanding* 5% failure)?
 | full-fit equivalents | 5.43 | 5.43 |
 | wall-clock | 626.1 s | 649.9 s |
 | **P/E wall-clock ratio** | | **0.963** |
-| summed fit work | 1254.3 s | 1282.8 s (sum ratio 1.023×) |
 | best point | (4, 130, 17) | (4, 130, 17) |
 | best CV MAE | **805.038** | **805.038** |
 | zones used (rows) | 10,461 and 418,416 | 10,461 and 418,416 |
@@ -620,7 +617,6 @@ zone (~4,184 rows), or is this finally below its reliability floor?
 | full-fit equivalents | 5.17 | 5.17 |
 | wall-clock | 512.0 s | 475.0 s |
 | **P/E wall-clock ratio** | | **1.078** |
-| summed fit work | 1378.8 s | 1301.6 s (sum ratio 0.944×) |
 | best point | (4, 130, 17) | (4, 130, 17) |
 | best CV MAE | **805.038** | **805.038** |
 | zones used (rows) | 4,185 and 418,416 | 4,185 and 418,416 |
@@ -651,7 +647,7 @@ rung is systematic-in-time regardless of size, so shrinking it mostly just
 saves rows without hurting representativeness), the more diagnostic next
 experiment is probably not "push the % lower" but testing whether
 `subsample_columns` narrowed to genuinely categorical columns (producing
-real multi-row runs instead of the current 1.0-rows/run degenerate case)
+real multi-row runs instead of the current 1.0-rows/run Even Sampling case)
 changes this picture at all — see the discussion above this table.
 
 ---
@@ -671,7 +667,6 @@ starting zone (~2,092 rows)? Same configuration as Experiment 9 otherwise.
 | full-fit equivalents | 5.09 | 5.09 |
 | wall-clock | 443.8 s | 445.0 s |
 | **P/E wall-clock ratio** | | **0.997** |
-| summed fit work | 1178.8 s | 1224.0 s (sum ratio 1.038×) |
 | best point | (4, 130, 17) | (4, 130, 17) |
 | best CV MAE | **805.038** | **805.038** |
 | zones used (rows) | 2,093 and 418,416 | 2,093 and 418,416 |
@@ -724,7 +719,6 @@ Experiment 10 otherwise.
 | full-fit equivalents | 5.04 | 5.04 |
 | wall-clock | 445.8 s | 469.7 s |
 | **P/E wall-clock ratio** | | **0.949** |
-| summed fit work | 1179.3 s | 1270.0 s (sum ratio 1.077×) |
 | best point | (4, 130, 17) | (4, 130, 17) |
 | best CV MAE | **805.038** | **805.038** |
 | zones used (rows) | 1,047 and 418,416 | 1,047 and 418,416 |
@@ -987,7 +981,6 @@ convention — the comparison arm).
 | evaluations | 31 | 29 | 27 |
 | full-fit equivalents | 5.07 | 5.06 | **5.07** |
 | wall-clock | 1168.0 s | 1160.9 s | 910.0 s |
-| summed fit work | 2945.3 s | 2993.7 s | 2290.3 s |
 | best point | (4, 130, 17) | (4, 130, 17) | **(4, 130, 17)** |
 | best CV MAE | 805.038 | 805.038 | **805.038** |
 | zones used (rows) | [837, 2093, 418416] | [837, 2093, 418416] | [837, 2093, 418416] |
@@ -1277,22 +1270,24 @@ directly.
 
 ---
 
-## Experiment 17 — Real stratification (day-flags only) fixes BayesHalvingSearchCV's Experiment 13 miss (2026-07-19, done)
+## Experiment 17 — Even Sampling vs. Alternate Sampling: a measured improvement for BayesHalvingSearchCV only (2026-07-19, done)
 
 Notebook: `RealStratified_BHS_vs_PSC.ipynb`. Every prior experiment's
 `subsample='stratified'` watched *all* columns, including the near-continuous
-weather columns, which makes almost every row unique and silently degrades
-the sampler to pure bit-reversal (1.0 rows/run — the transition-detection
-and alternating/novel-seat logic never actually fires). This run sets
-`subsample_columns` to the three genuinely low-cardinality day-varying flags
-(`HasPromotions`, `IsHoliday`, `IsOpen`), measured separately at 2.5 rows/run
-avg — real multi-row runs, the alternating logic engaged. Default ladder
-(`data_zones=(0.005, 0.01, 0.1, 1.0)`), official grid, `TimeSeriesSplit(5)`,
-MAE, `n_starts=1`, `random_state=0`, `verbose=2` on both arms. Data loaded
-from the saved processed CSV (`train_processed_dayflags_stratify.csv`,
-`C:\FILES\Code\Benchmarking\`) instead of re-running the raw pipeline.
-Directly comparable to Experiment 13 (identical ladder, grid, estimators) —
-the only difference is a real vs. degenerate stratified sampler.
+weather columns, which makes almost every row unique — this is **Even
+Sampling**: the sampler falls back to pure bit-reversal (1.0 rows/run), and
+the transition-detection and alternating/novel-seat logic never actually
+fires. This run sets `subsample_columns` to the three genuinely
+low-cardinality day-varying flags (`HasPromotions`, `IsHoliday`, `IsOpen`),
+measured separately at 2.5 rows/run avg — real multi-row runs, engaging
+**Alternate Sampling**'s transition-detection logic for the first time in
+this project. Default ladder (`data_zones=(0.005, 0.01, 0.1, 1.0)`),
+official grid, `TimeSeriesSplit(5)`, MAE, `n_starts=1`, `random_state=0`,
+`verbose=2` on both arms. Data loaded from the saved processed CSV
+(`train_processed_dayflags_stratify.csv`, `C:\FILES\Code\Benchmarking\`)
+instead of re-running the raw pipeline. Directly comparable to Experiment 13
+(identical ladder, grid, estimators) — the only difference is Even Sampling
+vs. Alternate Sampling.
 
 **Point of this experiment**: `stratified_order`'s transition-detection
 logic (novel-combination-first, then alternating boundary/midpoint picks,
@@ -1300,12 +1295,12 @@ then bit-reversed thinning of whatever's left) was designed to prioritize
 rows at genuine behavioral *changes* — but on this dataset it had never
 actually exercised that logic in any experiment run so far, because every
 row looked "novel" to it (near-continuous weather values mean almost no two
-rows are byte-identical), collapsing it to the bit-reversed fallback alone
-— an *even, arbitrary spread across row-index*, not a genuine
-transition-aware sample. This experiment tests whether giving the sampler
-only genuinely repeating, low-cardinality columns to watch (so it can
-actually detect real multi-row runs and alternate at real transitions)
-changes search outcomes versus that even-spread degenerate behavior.
+rows are byte-identical), falling back to Even Sampling alone — an *even
+spread across row-index*, not a transition-aware sample. This experiment
+tests whether giving the sampler only genuinely repeating, low-cardinality
+columns to watch (so it can actually detect real multi-row runs and
+alternate at real transitions — Alternate Sampling) changes search outcomes
+versus Even Sampling.
 
 **All columns in this dataset, and which were excluded from what — two
 separate exclusions, not to be conflated**:
@@ -1332,7 +1327,7 @@ separate exclusions, not to be conflated**:
    removal — the model still sees and trains on all 30 columns; only
    `stratified_order`'s own run-detection was narrowed to the 3 columns
    that actually measured real repeat structure (2.5 rows/run avg),
-   instead of watching all 30 (1.0 rows/run avg, degenerate).
+   instead of watching all 30 (1.0 rows/run avg, Even Sampling).
 
 **Settings**: official grid (`max_features∈{2,3,4}`,
 `n_estimators∈{10..260 step 10}`, `max_depth∈{5..17}`),
@@ -1345,50 +1340,43 @@ eager — no `contraction` argument was passed). `BayesHalvingSearchCV` used
 its defaults, `n_iter=25`, `promote_k=3`. Data loaded from the saved
 processed CSV rather than re-deriving from raw `train.csv`.
 
-**Results**
+**Results — Even Sampling (Experiment 13) vs. Alternate Sampling (this
+experiment), both estimators side by side**
 
-| | PatternSearchCV (patient, defaults) | BayesHalvingSearchCV |
-|---|---|---|
-| total evaluations | 22 | 28 |
-| fits @ 0.5% (2,093 rows) | 17 | 25 |
-| fits @ 100% (418,416 rows) | 5 | 3 |
-| full-fit equivalents | 5.085 | **3.125** |
-| wall-clock | 1481.6 s | 1280.6 s |
-| summed fit work | 2712.3 s | 2080.5 s |
-| best point | (4, 130, 17) | **(4, 130, 17)** |
-| best CV MAE | 805.038 | **805.038** |
+| | PatternSearchCV — Even Sampling | PatternSearchCV — Alternate Sampling | BayesHalvingSearchCV — Even Sampling | BayesHalvingSearchCV — Alternate Sampling |
+|---|---|---|---|---|
+| total evaluations | 22 | 22 | 28 | 28 |
+| fits @ 0.5% (2,093 rows) | 17 | 17 | 17 | 25 |
+| fits @ 10% (41,842 rows) | 0 | 0 | 8 | 0 |
+| fits @ 100% (418,416 rows) | 5 | 5 | 3 | 3 |
+| full-fit equivalents | 5.085 | 5.085 | 3.89 | **3.125** |
+| wall-clock | 1157.6 s | 1481.6 s | 922.5 s | 1280.6 s |
+| best point | (4, 130, 17) | (4, 130, 17) | (4, 150, 17) | **(4, 130, 17)** |
+| best CV MAE | 805.038 | 805.038 | **805.730** | **805.038** |
 
-**Comparison against the even-spread (degenerate) sampling strategy** —
-Experiment 13, identical ladder/grid/estimators, `subsample_columns`
-unset (all 30 columns watched, collapsing to the bit-reversed
-even-across-row-index fallback, 1.0 rows/run): PatternSearchCV 22 evals,
-5.09 equiv, best (4,130,17), MAE 805.038 — *unchanged* by the sampler fix.
-BayesHalvingSearchCV 28 evals, 3.89 equiv, best (4,150,17), MAE
-**805.730** — the real-transition-aware sampler in this experiment fixed
-this miss and lowered its cost to 3.125 equivalents.
+**Finding: Alternate Sampling very slightly improves BayesHalvingSearchCV
+specifically — it makes no difference to PatternSearchCV.** Under Even
+Sampling, BayesHalvingSearchCV landed on (4,150,17)/805.730, an adjacent
+point to the true optimum. Under Alternate Sampling, it finds the exact
+same optimum PatternSearchCV finds, (4,130,17)/805.038, at 3.125 full-fit
+equivalents — a modest reduction from its own 3.89 under Even Sampling.
+PatternSearchCV's result is identical in every respect (same evaluations,
+same equivalents, same point) whichever sampling strategy is used — this
+effect is specific to the estimator whose cheap-zone ranking signal drives
+its decisions more directly (GP-EI is more sensitive to how representative
+the cheap sample is than Hooke-Jeeves' local mesh moves, which only need a
+coarse "is this neighbor better" signal). Neither estimator touched the 10%
+intermediate rung under Alternate Sampling — both jumped straight from
+0.5% to 100% via the usual forced-final-polish/final-polish mechanism; only
+BayesHalvingSearchCV touched it under Even Sampling.
 
-**Finding: real stratification fixed BayesHalvingSearchCV's only real miss
-in this project's history, and made it cheaper too.** With the degenerate
-sampler (Experiment 13), BayesHalvingSearchCV landed on (4,150,17)/805.730 —
-a small but real miss of the true optimum. With the day-flags-only real
-stratification, it now finds the exact same optimum PatternSearchCV finds,
-(4,130,17)/805.038, at 3.125 full-fit equivalents — *cheaper* than its own
-prior 3.89. PatternSearchCV's result is unchanged in every respect (same
-evaluations, same equivalents, same point) — the fix specifically helped
-the estimator whose cheap-zone ranking signal drives its decisions more
-directly (GP-EI is more sensitive to how representative the cheap sample is
-than Hooke-Jeeves' local mesh moves, which only need a coarse "is this
-neighbor better" signal). Neither estimator touched the 10% intermediate
-rung this run — both jumped straight from 0.5% to 100% via the usual
-forced-final-polish/final-polish mechanism.
-
-Wall-clock this run (1481.6 s / 1280.6 s) ran noticeably slower than
-Experiment 13's matching arms (1157.6 s / 922.5 s, a ~28-39% gap versus this
-project's usual ~15-25% noise floor) — individual fits were observed taking
-2.9-4.0 minutes mid-run versus the usual ~1-2 minutes, consistent with
-machine load from a long session rather than a real cost difference;
+Wall-clock under Alternate Sampling (1481.6 s / 1280.6 s) ran noticeably
+slower than the Even Sampling arms (1157.6 s / 922.5 s, a ~28-39% gap versus
+this project's usual ~15-25% noise floor) — individual fits were observed
+taking 2.9-4.0 minutes mid-run versus the usual ~1-2 minutes, consistent
+with machine load from a long session rather than a real cost difference;
 full-fit equivalents (unaffected by machine load) is the metric that
-matters here and shows a genuine, real improvement.
+matters here and shows a genuine, real improvement for BayesHalvingSearchCV.
 
 Side note: `verbose=2` on these estimators also cascades into scikit-learn's
 own native per-fold `[CV] END ...` printing (`BaseSearchCV`'s own verbosity,

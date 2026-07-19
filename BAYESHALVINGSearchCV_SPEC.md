@@ -119,7 +119,7 @@ All in `src/pattern_search_cv/`:
 | Component | Location | What it gives you |
 |---|---|---|
 | `Space` | `_space.py` | grid dims from `param_grid` (lists or `(low,high,num)` tuples); integer index tuples; `params(idx)`/`indices(params)`; `distance(a,b)` = Euclidean over normalized numeric coords + Hamming for categoricals; `min_step`; `midpoint()` |
-| `stratified_order(X, columns=None)` | `_sampling.py` | the priority ordering (novel-first + boundary/midpoint + bit-reversed thinning); degenerates safely to a bit-reversed full-timeline permutation when every row is unique |
+| `stratified_order(X, columns=None)` | `_sampling.py` | the priority ordering (novel-first + boundary/midpoint + bit-reversed thinning); falls back safely to Even Sampling (a bit-reversed full-timeline permutation) when every row is unique |
 | `expanding_order`, `random_order` | `_sampling.py` | the other two orderings |
 | `ZoneSplitter(base_cv, subset)` | `_sampling.py` | CV splitter over a sorted subset of rows, mapped back to original indices; same `n_splits` as base (required by `BaseSearchCV`) |
 | `PatternSearchCV` | `_search.py` | the *reference implementation* for every sklearn-integration pattern below. Read it before writing code. |

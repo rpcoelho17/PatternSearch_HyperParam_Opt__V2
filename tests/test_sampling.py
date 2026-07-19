@@ -44,9 +44,9 @@ def test_stratified_prefix_prioritizes_transitions():
     assert set(order[:100]) <= set(order[:500])
 
 
-def test_stratified_degenerate_continuous_column():
-    # every row differs -> collapses to (near) systematic sampling, still a
-    # full permutation, no crash
+def test_stratified_even_sampling_continuous_column():
+    # every row differs -> falls back to Even Sampling (near-systematic),
+    # still a full permutation, no crash
     X = np.arange(500, dtype=float).reshape(-1, 1)
     order = stratified_order(X)
     assert np.array_equal(np.sort(order), np.arange(500))
