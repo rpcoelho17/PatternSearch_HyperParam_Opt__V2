@@ -56,7 +56,7 @@ reference, Experiment 4 as the measured one.
 
 ## Experiment 1 — New `PatternSearchCV`, default configuration (2026-07-13)
 
-Notebook: `Prototype_Replication.ipynb` (executed; full logs inside).
+Notebook: `experiments/Prototype_Replication.ipynb` (executed; full logs inside).
 
 **Configuration**: defaults — 1 start (grid midpoint), data zones 10/20/50/100%,
 `warmup=3`, `subsample='auto'` → **expanding** (oldest rows first, because CV is
@@ -97,7 +97,7 @@ including sklearn's `parametrize_with_checks`.
 
 ## Experiment 2 — Head-to-head vs prototype (bugs intact), MAE objective (2026-07-14)
 
-Notebook: `HeadToHead_26grid.ipynb`. New algorithm (opportunistic forced,
+Notebook: `experiments/HeadToHead_26grid.ipynb`. New algorithm (opportunistic forced,
 default 4-zone bullseye) vs the prototype's V2 search cell **verbatim, bugs
 intact** (premature contraction on failed/duplicate pattern moves,
 non-compounding pattern references, O(n) dedup scans), both optimizing MAE,
@@ -122,7 +122,7 @@ for interpreting single-run timing differences (see Experiment 5).
 
 ## Experiment 3 — V1 prototype exactly as the user's cell (2026-07-14)
 
-Notebook: `V1_Prototype_26grid.ipynb`. The V1 class + its "#Execute Pattern
+Notebook: `experiments/V1_Prototype_26grid.ipynb`. The V1 class + its "#Execute Pattern
 Search:" cell **verbatim** (default scoring = R², `clf n_jobs=-1`). Six
 disclosed plumbing shims (joblib path, sklearn-1.x base class, `iid=`,
 `error_score` value, `df.append`→`pd.concat`, `time` shadowing in timing
@@ -161,7 +161,7 @@ wall-clock includes nested parallelism (`clf n_jobs=-1` inside search
 
 ## Experiment 4 — Optuna Bayesian baselines, TPE + GPSampler (2026-07-14)
 
-Notebook: `Optuna_Baseline.ipynb` (TPE) + `C:\FILES\Code\Benchmarking\psc-opt\run_gp.py`
+Notebook: `experiments/Optuna_Baseline.ipynb` (TPE) + `C:\FILES\Code\Benchmarking\psc-opt\run_gp.py`
 (GPSampler — needs torch, which required a short-path venv: torch's nested file
 paths exceed Windows' 260-char limit under the package venv, and torch 2.13's
 DLLs fail on this Windows 10 build; torch 2.5.1 works). 15 trials per sampler
@@ -182,7 +182,7 @@ equivalents to first reach it — the new algorithm's entire search cost 6.80.
 
 ## Experiment 5 — Eager contraction, controlled single-variable test (2026-07-14)
 
-Notebook: `Eager_26grid.ipynb`. `contraction="eager"` (prototype-faithful:
+Notebook: `experiments/Eager_26grid.ipynb`. `contraction="eager"` (prototype-faithful:
 failed pattern moves also contract), everything else identical to
 Experiment 2's new-algorithm run (same seed, MAE objective, opportunistic poll,
 default bullseye).
@@ -251,7 +251,7 @@ own (stratified, default ladder shape) is a natural next experiment.
 
 ## Experiment 6 — Patient/Eager instrumented round, zones [0.05, 0.10, 0.20, 1.0] (running)
 
-Notebook: `PE_Round_5_10_20_100.ipynb`. One P,E round, back-to-back in a single
+Notebook: `experiments/PE_Round_5_10_20_100.ipynb`. One P,E round, back-to-back in a single
 kernel, per-evaluation fit times recorded (`mean_fit_time` × 5 = "total fit
 work", a machine-noise-resistant measure of computation performed). Purpose:
 resolve Experiment 5's open 135 s question — policy effect, cheaper fit mix on
@@ -309,7 +309,7 @@ the 5% start on both cost and answer. (Also an argument for testing
 
 ## Experiment 7 — Stratified sampling P/E round, zones [0.05, 0.10, 0.20, 1.0] (running)
 
-Notebook: `PE_Stratified_5_10_20_100.ipynb`. Identical to Experiment 6 in every
+Notebook: `experiments/PE_Stratified_5_10_20_100.ipynb`. Identical to Experiment 6 in every
 respect (P then E, same ladder, seed, grid, MAE, fit-time instrumentation)
 except `subsample="stratified"` — the transition sampler — instead of the
 expanding window. Question under test: Experiment 6 showed the expanding 5%
@@ -368,7 +368,7 @@ Experiment 6's correction and should be ignored.)
 
 ## Experiment 8 — Patient/Eager, zones [2.5%, 5%, 10%, 100%], verbose=2 (built, awaiting run)
 
-Notebook: `PE_Round_2.5_5_10_100_verbose2.ipynb`. Same P-then-E controlled
+Notebook: `experiments/PE_Round_2.5_5_10_100_verbose2.ipynb`. Same P-then-E controlled
 round as Experiments 6–7, one step more aggressive on the starting zone
 (2.5% ≈ 10.5K rows, vs Experiment 7's 5%), `subsample="stratified"` explicit
 (Experiment 7's winning configuration), `poll="opportunistic"` explicit,
@@ -605,7 +605,7 @@ row**. Coverage is balanced, not just technically present.
 
 ## Experiment 9 — Patient/Eager, zones [1%, 5%, 10%, 100%], verbose=0 (2026-07-15, done)
 
-Notebook: `PE_Round_1_5_10_100.ipynb`. Continuing the starting-zone
+Notebook: `experiments/PE_Round_1_5_10_100.ipynb`. Continuing the starting-zone
 progression from Experiment 8 (10% → 5% → 2.5%, each a win or tie so far):
 does `subsample='stratified'` hold at an even more aggressive 1% starting
 zone (~4,184 rows), or is this finally below its reliability floor?
@@ -658,7 +658,7 @@ changes this picture at all — see the discussion above this table.
 
 ## Experiment 10 — Patient/Eager, zones [0.5%, 1%, 10%, 100%], verbose=0 (2026-07-15, done)
 
-Notebook: `PE_Round_0.5_1_10_100.ipynb`. Continuing the starting-zone
+Notebook: `experiments/PE_Round_0.5_1_10_100.ipynb`. Continuing the starting-zone
 progression (10% → 5% → 2.5% → 1%, each a win or tie so far — Experiments
 7–9): does `subsample='stratified'` hold at an even more aggressive 0.5%
 starting zone (~2,092 rows)? Same configuration as Experiment 9 otherwise.
@@ -709,7 +709,7 @@ comparison arm already queued below to see where random sampling — not
 
 ## Experiment 11 — Patient/Eager, zones [0.25%, 1%, 10%, 100%], verbose=0 (2026-07-15, done)
 
-Notebook: `PE_Round_0.25_1_10_100.ipynb`. Skips straight to a 0.25% starting
+Notebook: `experiments/PE_Round_0.25_1_10_100.ipynb`. Skips straight to a 0.25% starting
 zone (~1,046 rows) — between the store-coverage side-analysis's 0.2%
 (601/601 stores, full coverage) and 0.1% (415/601, where `stratified` first
 pulled decisively ahead of random). Tests whether an actual search still
@@ -823,7 +823,7 @@ protects small datasets from an unreasonably tiny first rung regardless.
 
 ## Experiment 12 — `GPProposer` vs Optuna `GPSampler`, dev-time validation (2026-07-18, done)
 
-Notebook: `GP_Validation_vs_Optuna.ipynb`, run from the separate `psc-opt` venv
+Notebook: `experiments/GP_Validation_vs_Optuna.ipynb`, run from the separate `psc-opt` venv
 (torch 2.5.1+cpu, optuna 4.9.0 — dev-time reference only, never a runtime
 dependency; see `BAYESHALVINGSearchCV_SPEC.md` §1.1/§8). Not part of the pytest
 suite, not a CI gate. Validates the from-scratch `GPProposer`
@@ -885,7 +885,7 @@ reasonable-looking answer." Cleared to use, unmodified from this state, in
 
 ## Experiment 13 — BayesHalvingSearchCV vs PatternSearchCV, real benchmark (2026-07-18, done)
 
-Notebook: `BHS_vs_PSC_26grid.ipynb`. Runs in the plain package `.venv` — no
+Notebook: `experiments/BHS_vs_PSC_26grid.ipynb`. Runs in the plain package `.venv` — no
 torch anywhere in this notebook, confirming `BayesHalvingSearchCV` really has
 zero additional runtime dependencies. Official grid (`max_features` {2,3,4} x
 `n_estimators` {10..260 step 10} x `max_depth` {5..17}), `TimeSeriesSplit(5)`,
@@ -967,7 +967,7 @@ while BayesHalvingSearchCV's polish step has a hard ceiling on that cost.
 
 ## Experiment 14 — Does `subsample='random'` actually break at 0.2%, where coverage theory predicts it should? (2026-07-18, done)
 
-Notebook: `PE_Stratified_vs_Random_0.2_0.3_0.5_100.ipynb`. Direct test of the
+Notebook: `experiments/PE_Stratified_vs_Random_0.2_0.3_0.5_100.ipynb`. Direct test of the
 theory from "Why stratified sampling has actually been winning" (above): a
 side-analysis (not a search run) measured that at 0.2%, `stratified`
 guarantees 601/601 store coverage while true random sampling averages only
@@ -1082,7 +1082,7 @@ generalizes.
 
 ## Experiment 15 — Low-data stress test: PatternSearchCV (eager) vs BayesHalvingSearchCV, and stratified vs random with seed 42 (2026-07-18/19, done)
 
-Notebook: `LowData_Stress_PSCeager_BHS_Random42.ipynb`. Zones `[0.15%, 0.20%,
+Notebook: `experiments/LowData_Stress_PSCeager_BHS_Random42.ipynb`. Zones `[0.15%, 0.20%,
 2%, 100%]` — one rung below Experiment 14's 0.2% floor. Two comparisons in
 one run, `verbose=2` on every arm (full per-decision log saved in the
 notebook), `n_starts=1`, official grid, `TimeSeriesSplit(5)`, MAE:
@@ -1279,7 +1279,7 @@ directly.
 
 ## Experiment 17 — Real stratification (day-flags only) fixes BayesHalvingSearchCV's Experiment 13 miss (2026-07-19, done)
 
-Notebook: `RealStratified_BHS_vs_PSC.ipynb`. Every prior experiment's
+Notebook: `experiments/RealStratified_BHS_vs_PSC.ipynb`. Every prior experiment's
 `subsample='stratified'` watched *all* columns, including the near-continuous
 weather columns, which makes almost every row unique and silently degrades
 the sampler to pure bit-reversal (1.0 rows/run — the transition-detection
