@@ -1,5 +1,5 @@
 """GPProposer - pure unit tests, no sklearn estimator, no model fitting harness
-around it, small Space instances only (BayesHalvingSearchCV_SPEC.md section 9,
+around it, small Space instances only (BAYESHALVINGSearchCV_SPEC.md section 9,
 items 7-12)."""
 
 import numpy as np

@@ -1,6 +1,6 @@
 """Scatter-search start selection, shared by PatternSearchCV and
 BayesHalvingSearchCV (spec: PatternSearchCV_SPEC.md section 6.1,
-BayesHalvingSearchCV_SPEC.md section 2.1).
+BAYESHALVINGSearchCV_SPEC.md section 2.1).
 
 Extracted verbatim from PatternSearchCV._select_starts so both estimators use
 one implementation, not two that could silently drift.

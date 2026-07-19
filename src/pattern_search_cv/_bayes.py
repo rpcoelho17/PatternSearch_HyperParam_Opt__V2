@@ -2,7 +2,7 @@
 (Gaussian Process + Expected Improvement) with bullseye multi-fidelity data
 growth and scatter-search multi-start.
 
-Spec: BayesHalvingSearchCV_SPEC.md.
+Spec: BAYESHALVINGSearchCV_SPEC.md.
 """
 
 from __future__ import annotations
@@ -406,7 +406,7 @@ class BayesHalvingSearchCV(BaseSearchCV):
 
 def _run_one_start(start_i, start_point, space, zones, promote_k, n_iter,
                    warmup, evaluate_batch, cache, rng, max_asks):
-    """One independent Bayesian search (BayesHalvingSearchCV_SPEC.md §4.3):
+    """One independent Bayesian search (BAYESHALVINGSearchCV_SPEC.md §4.3):
     GP-EI proposals with bullseye multi-fidelity climbing, sharing `cache`
     (dedup, across starts) and drawing all randomness from `rng` (determinism,
     §7)."""
@@ -489,7 +489,7 @@ def _run_one_start(start_i, start_point, space, zones, promote_k, n_iter,
 
 def _build_local_optima(space, per_start_results):
     """Distinct converged optima across starts, best first — dedup by final
-    incumbent index tuple (BayesHalvingSearchCV_SPEC.md §3.2), same shape as
+    incumbent index tuple (BAYESHALVINGSearchCV_SPEC.md §3.2), same shape as
     PatternSearchCV's Engine.local_optima()."""
     groups = {}
     for r in per_start_results:

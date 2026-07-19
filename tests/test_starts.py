@@ -1,5 +1,5 @@
 """select_starts is shared by PatternSearchCV and BayesHalvingSearchCV
-(BayesHalvingSearchCV_SPEC.md section 2.1). These tests prove the extraction
+(BAYESHALVINGSearchCV_SPEC.md section 2.1). These tests prove the extraction
 out of PatternSearchCV was behavior-preserving and that both estimators call
 into one implementation, not two that could silently drift."""
 

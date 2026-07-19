@@ -306,7 +306,7 @@ class PatternSearchCV(BaseSearchCV):
         return handler
 
     def _select_starts(self, space, rng):
-        # Shared with BayesHalvingSearchCV (BayesHalvingSearchCV_SPEC.md §2.1):
+        # Shared with BayesHalvingSearchCV (BAYESHALVINGSearchCV_SPEC.md §2.1):
         # logic lives in _starts.select_starts so both estimators use one
         # implementation, not two that could silently drift.
         return select_starts(space, self.n_starts, self.start_points, rng)

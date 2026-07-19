@@ -1,6 +1,6 @@
 """BullseyeController: the multi-fidelity ring methodology (bullseye), extracted
 from Climber so BayesHalvingSearchCV can reuse the identical rules
-(BayesHalvingSearchCV_SPEC.md section 6).
+(BAYESHALVINGSearchCV_SPEC.md section 6).
 
 Normative source: Climber._commit_move/_calibrate/_zone_for in _climber.py.
 Climber itself is NOT refactored to use this class (deliberate scope control,

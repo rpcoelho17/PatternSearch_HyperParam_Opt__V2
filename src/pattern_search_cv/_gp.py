@@ -1,4 +1,4 @@
-"""GPProposer: the from-scratch Bayesian search core (BayesHalvingSearchCV_SPEC.md
+"""GPProposer: the from-scratch Bayesian search core (BAYESHALVINGSearchCV_SPEC.md
 section 5). sklearn's GaussianProcessRegressor + a hand-rolled Expected
 Improvement acquisition - no Optuna, no torch. Entirely independent of
 BaseSearchCV / the estimator machinery, so it can be driven and validated in

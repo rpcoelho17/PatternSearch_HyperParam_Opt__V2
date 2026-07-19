@@ -1,5 +1,5 @@
 """End-to-end BayesHalvingSearchCV tests against real (small, fast) models
-(BayesHalvingSearchCV_SPEC.md section 9, items 13-20 and 22)."""
+(BAYESHALVINGSearchCV_SPEC.md section 9, items 13-20 and 22)."""
 
 import pickle
 

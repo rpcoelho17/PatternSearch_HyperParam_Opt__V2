@@ -1,5 +1,5 @@
 """BullseyeController - pure unit tests, no sklearn, no Space, hand-computed
-sequences (BayesHalvingSearchCV_SPEC.md section 9, items 3-6)."""
+sequences (BAYESHALVINGSearchCV_SPEC.md section 9, items 3-6)."""
 
 from pattern_search_cv._fidelity import BullseyeController
 

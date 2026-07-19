@@ -825,7 +825,7 @@ protects small datasets from an unreasonably tiny first rung regardless.
 
 Notebook: `GP_Validation_vs_Optuna.ipynb`, run from the separate `psc-opt` venv
 (torch 2.5.1+cpu, optuna 4.9.0 — dev-time reference only, never a runtime
-dependency; see `BayesHalvingSearchCV_SPEC.md` §1.1/§8). Not part of the pytest
+dependency; see `BAYESHALVINGSearchCV_SPEC.md` §1.1/§8). Not part of the pytest
 suite, not a CI gate. Validates the from-scratch `GPProposer`
 (`sklearn.gaussian_process.GaussianProcessRegressor`, Matern 5/2, hand-rolled
 Expected Improvement) built for `BayesHalvingSearchCV` against Optuna's
@@ -891,7 +891,7 @@ zero additional runtime dependencies. Official grid (`max_features` {2,3,4} x
 `n_estimators` {10..260 step 10} x `max_depth` {5..17}), `TimeSeriesSplit(5)`,
 MAE, zones `(0.005, 0.01, 0.1, 1.0)`, `subsample="stratified"`,
 `random_state=0`, `n_starts=1` on both arms — directly comparable to the
-reference rows in `BayesHalvingSearchCV_SPEC.md` §0.
+reference rows in `BAYESHALVINGSearchCV_SPEC.md` §0.
 
 **Results**
 
