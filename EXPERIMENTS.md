@@ -1158,3 +1158,87 @@ comparison of seed alone.
 largest margin (+7.6% MAE); PSC eager/random(42) second (+0.36% MAE);
 PSC eager/stratified did not break (found the exact known optimum, at
 nearly double the usual compute cost).**
+
+---
+
+## Experiment 16 — Faithfulness sweep: which axis breaks at low data fractions, and where (2026-07-19, done)
+
+Side-analysis (not a search run), following up directly on Experiment 15's
+finding that an aggressive 0.15% start corrupted the search's incumbent.
+Marginal 3-axis sweep around the known optimum (`max_features=4,
+n_estimators=130, max_depth=17`): hold two dimensions fixed at their
+optimal value, vary the third across its full grid range (`n_estimators`
+thinned to every other value), and score every config at 9 fractions
+(`stratified_order` + `ZoneSplitter`, same machinery the real searches
+use) from 0.15% up to 100%. 27 distinct configs × 9 fractions = 243 fits.
+
+**max_features axis (n_estimators=130, max_depth=17 fixed)**
+
+| fraction | 2 | 3 | 4 | argmin |
+|---|---|---|---|---|
+| 0.15% | 1249.1 | 1131.8 | **1015.3** | 4 |
+| 0.20% | 1252.6 | 1098.0 | **994.1** | 4 |
+| 0.30% | 1211.3 | 1064.9 | **960.0** | 4 |
+| 0.50% | 1208.6 | 1066.2 | **944.6** | 4 |
+| 1% | 1148.5 | 1011.0 | **879.6** | 4 |
+| 2% | 1089.4 | 970.3 | **858.0** | 4 |
+| 5% | 1063.3 | 935.5 | **835.2** | 4 |
+| 10% | 1041.9 | 921.1 | **818.0** | 4 |
+| 100% | 1015.2 | 907.6 | **805.0** | 4 |
+
+Perfectly faithful at every fraction tested — `4` wins from 0.15% to 100%.
+
+**n_estimators axis (max_features=4, max_depth=17 fixed)**
+
+| fraction | 10 | 30 | 50 | 70 | 90 | 110 | 130 | 150 | 170 | 190 | 210 | 230 | 250 | argmin |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0.15% | 1204.2 | 1099.7 | 1047.3 | 1035.7 | 1023.8 | 1026.9 | **1015.3** | 1022.2 | 1020.9 | 1019.7 | 1026.2 | 1026.1 | 1027.2 | 130 |
+| 0.20% | 1164.7 | 1097.2 | 1029.3 | 1018.0 | 1003.2 | 1008.8 | **994.1** | 998.1 | 999.4 | 1005.0 | 1009.3 | 1010.2 | 1013.3 | 130 |
+| 0.30% | 1132.4 | 1044.2 | 1001.4 | 989.1 | 974.9 | 969.8 | **960.0** | 960.2 | 961.6 | 969.0 | 972.1 | 973.5 | 973.0 | 130 |
+| 0.50% | 1093.2 | 1020.5 | 968.5 | 971.5 | 953.8 | 952.7 | **944.6** | 946.5 | 948.8 | 952.7 | 956.2 | 958.9 | 961.6 | 130 |
+| 1% | 1000.6 | 942.9 | 902.5 | 900.0 | 888.6 | 889.9 | **879.6** | 881.3 | 884.4 | 887.1 | 888.7 | 890.8 | 892.1 | 130 |
+| 2% | 929.7 | 899.3 | 873.1 | 873.8 | 869.1 | 867.2 | **858.0** | 860.0 | 861.4 | 864.5 | 865.5 | 865.3 | 866.1 | 130 |
+| 5% | 934.6 | 891.6 | 848.1 | 848.9 | 841.5 | 842.8 | **835.2** | 835.5 | 837.1 | 842.3 | 845.1 | 845.0 | 846.6 | 130 |
+| 10% | 881.3 | 861.3 | 837.0 | 832.9 | 823.8 | 826.3 | **818.0** | 818.0 | 818.3 | 821.8 | 824.7 | 827.6 | 830.5 | 130 |
+| 100% | 879.9 | 851.7 | 817.4 | 815.7 | 809.3 | 812.2 | **805.0** | 805.7 | 808.0 | 812.4 | 814.7 | 815.4 | 818.1 | 130 |
+
+Also perfectly faithful — `130` wins at every fraction, despite a visibly
+bumpier curve than `max_features`'s.
+
+**max_depth axis (max_features=4, n_estimators=130 fixed) — the fragile one**
+
+| fraction | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | argmin |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **0.15%** | 1254.8 | 1171.4 | 1127.3 | 1099.0 | 1065.8 | 1044.0 | 1035.7 | 1016.8 | 1020.1 | **1008.5** | 1016.1 | 1025.3 | 1015.3 | **14 (WRONG)** |
+| **0.20%** | 1267.5 | 1218.3 | 1161.5 | 1110.8 | 1077.8 | 1057.9 | 1029.0 | 1019.8 | 1000.6 | 999.6 | 993.9 | **987.6** | 994.1 | **16 (WRONG)** |
+| 0.30% | 1267.1 | 1205.4 | 1144.6 | 1096.9 | 1065.3 | 1027.7 | 1019.8 | 979.7 | 974.4 | 969.5 | 969.1 | 962.6 | **960.0** | 17 |
+| 0.50% | 1316.9 | 1255.1 | 1177.5 | 1132.1 | 1078.2 | 1053.2 | 1015.8 | 992.0 | 976.8 | 968.8 | 955.4 | 957.3 | **944.6** | 17 |
+| 1% | 1296.7 | 1221.7 | 1163.1 | 1114.8 | 1057.6 | 1023.4 | 988.5 | 952.6 | 926.5 | 916.6 | 902.6 | 886.7 | **879.6** | 17 |
+| 2% | 1288.7 | 1206.8 | 1144.8 | 1097.1 | 1054.3 | 1015.6 | 982.7 | 949.0 | 915.8 | 894.6 | 877.2 | 864.1 | **858.0** | 17 |
+| 5% | 1303.1 | 1240.4 | 1167.7 | 1105.2 | 1064.3 | 1018.5 | 978.8 | 948.0 | 916.8 | 887.1 | 875.3 | 844.3 | **835.2** | 17 |
+| 10% | 1303.8 | 1235.2 | 1165.2 | 1103.7 | 1072.6 | 1022.1 | 983.4 | 947.6 | 915.3 | 878.3 | 858.5 | 835.6 | **818.0** | 17 |
+| 100% | 1318.1 | 1252.7 | 1188.5 | 1144.1 | 1082.0 | 1039.3 | 1009.3 | 961.4 | 933.5 | 887.2 | 863.9 | 831.1 | **805.0** | 17 |
+
+**Finding: of the three grid axes, only `max_depth` is fragile at low data
+fractions, and its faithfulness floor is precisely 0.30%.** `max_features`
+and `n_estimators` pick the correct argmin at every single fraction tested,
+all the way down to 0.15% — their quality gaps between values are large
+enough to survive small-sample noise. `max_depth`'s gaps near the optimum
+are much tighter (960.0 vs 962.6 at 0.30%, depth 17 vs 16), so at 0.15% and
+0.20% small-sample noise inverts the ranking: `depth=14` and `depth=16`
+respectively look better than the true-optimal `depth=17`. From 0.30%
+onward the correct answer (17) wins at every fraction, with a clean,
+monotonically-improving-with-fraction curve.
+
+This is a direct, causal explanation for Experiment 15's failure mode (the
+search's incumbent moved to `max_depth=14` at the 0.15% zone, exactly
+matching this table's row) and for why every prior experiment starting at
+0.5% or above (Experiments 1, 7-13) never exhibited it — 0.5% sits
+comfortably above the 0.30% floor. Experiment 11's 0.25% starting zone sits
+inside the untested gap between this sweep's 0.20% (broken) and 0.30%
+(fixed) fractions; that experiment's real search nonetheless found the
+correct optimum, which is not a contradiction — the search's own resilience
+(multiple probe directions, pattern moves, mandatory full-data confirmation)
+provides some margin beyond what a single marginal-axis argmin check alone
+predicts — but it is not covered by this sweep and remains untested
+directly.
