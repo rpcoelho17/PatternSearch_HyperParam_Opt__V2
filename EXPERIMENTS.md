@@ -1163,14 +1163,34 @@ nearly double the usual compute cost).**
 
 ## Experiment 16 — Faithfulness sweep: which axis breaks at low data fractions, and where (2026-07-19, done)
 
-Side-analysis (not a search run), following up directly on Experiment 15's
-finding that an aggressive 0.15% start corrupted the search's incumbent.
-Marginal 3-axis sweep around the known optimum (`max_features=4,
-n_estimators=130, max_depth=17`): hold two dimensions fixed at their
-optimal value, vary the third across its full grid range (`n_estimators`
-thinned to every other value), and score every config at 9 fractions
-(`stratified_order` + `ZoneSplitter`, same machinery the real searches
-use) from 0.15% up to 100%. 27 distinct configs × 9 fractions = 243 fits.
+**Why**: Experiment 15 found that starting at an aggressive 0.15% data
+fraction corrupted the search's incumbent — its verbose log showed the
+"best so far" pick was `max_depth=14`, when the true best (on full data)
+is `max_depth=17`. That means the cheap fraction was *lying* about which
+hyperparameter value was better. This experiment asks precisely: at what
+data fraction does each hyperparameter's cheap-data ranking stop lying and
+start agreeing with its true (100%-data) ranking — its "faithfulness
+floor"? Below that floor, starting a search there risks the exact
+corruption Experiment 15 hit; above it, cheap exploration is trustworthy.
+
+**Methodology**: side-analysis, not a search run. Marginal 3-axis sweep
+around the known optimum (`max_features=4, n_estimators=130,
+max_depth=17`): hold two dimensions fixed at their optimal value, vary the
+third across its full grid range (`n_estimators` thinned to every other
+value), and score every resulting config at 9 fractions from 0.15% up to
+100% (27 distinct configs × 9 fractions = 243 fits). Row selection
+(`stratified_order`) and CV splitting (`ZoneSplitter` + `TimeSeriesSplit`)
+use the exact same machinery the real searches use, not a synthetic
+approximation — this measures the actual signal a real search would see
+at each fraction.
+
+**Reading the tables**: each row is one data fraction; each non-`argmin`
+column is one value of the varied hyperparameter (the other two held
+fixed, noted in each table's heading); **each cell is the cross-validated
+MAE for that (hyperparameter value, fraction) combination — lower is
+better**. The bolded cell and the `argmin` column mark which value looked
+best *at that fraction*; that's "faithful" only when it matches the
+100%-fraction row's answer.
 
 **max_features axis (n_estimators=130, max_depth=17 fixed)**
 
