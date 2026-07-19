@@ -249,7 +249,16 @@ Hooke-Jeeves pattern search over a discrete hyperparameter grid.
 
 **n_jobs** : *int, default=None*
 > Passed straight through to `BaseSearchCV`; same semantics as
-> `GridSearchCV`.
+> `GridSearchCV`. This controls CPU parallelism only (joblib/loky worker
+> processes, capped by CPU core count) — neither estimator has any GPU
+> awareness anywhere in the stack (dependencies are only `numpy`, `scipy`,
+> `scikit-learn`). If `estimator` is itself GPU-native (e.g.
+> `XGBoost(tree_method="gpu_hist")`), that estimator's own fits will use the
+> GPU, but `n_jobs > 1` will spawn multiple CPU processes that all try to use
+> the *same* GPU device simultaneously — there's no GPU-device-aware
+> scheduling anywhere in joblib or this package, so that can cause
+> contention rather than speedup. Use `n_jobs=1` at the search level with a
+> GPU-native estimator and let it manage its own internal parallelism.
 
 **refit** : *bool or str, default=True*
 > Passed straight through to `BaseSearchCV`; same semantics as
@@ -408,7 +417,9 @@ Expected Improvement acquisition; no Optuna, no torch).
 
 **scoring, n_jobs, refit, cv, pre_dispatch, error_score, return_train_score**
 > Passed straight through to `BaseSearchCV`; same semantics as
-> `GridSearchCV` and identical to `PatternSearchCV`'s own.
+> `GridSearchCV` and identical to `PatternSearchCV`'s own — including
+> `n_jobs`'s CPU-only parallelism and the GPU-contention gotcha with a
+> GPU-native `estimator`, see `PatternSearchCV`'s `n_jobs` entry above.
 
 **verbose** : *int, default=0*
 > `0`: silent. `1`: narrates every search decision as it happens
