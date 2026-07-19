@@ -1274,3 +1274,68 @@ correct optimum, which is not a contradiction — the search's own resilience
 provides some margin beyond what a single marginal-axis argmin check alone
 predicts — but it is not covered by this sweep and remains untested
 directly.
+
+---
+
+## Experiment 17 — Real stratification (day-flags only) fixes BayesHalvingSearchCV's Experiment 13 miss (2026-07-19, done)
+
+Notebook: `RealStratified_BHS_vs_PSC.ipynb`. Every prior experiment's
+`subsample='stratified'` watched *all* columns, including the near-continuous
+weather columns, which makes almost every row unique and silently degrades
+the sampler to pure bit-reversal (1.0 rows/run — the transition-detection
+and alternating/novel-seat logic never actually fires). This run sets
+`subsample_columns` to the three genuinely low-cardinality day-varying flags
+(`HasPromotions`, `IsHoliday`, `IsOpen`), measured separately at 2.5 rows/run
+avg — real multi-row runs, the alternating logic engaged. Default ladder
+(`data_zones=(0.005, 0.01, 0.1, 1.0)`), official grid, `TimeSeriesSplit(5)`,
+MAE, `n_starts=1`, `random_state=0`, `verbose=2` on both arms. Data loaded
+from the saved processed CSV (`train_processed_dayflags_stratify.csv`,
+`C:\FILES\Code\Benchmarking\`) instead of re-running the raw pipeline.
+Directly comparable to Experiment 13 (identical ladder, grid, estimators) —
+the only difference is a real vs. degenerate stratified sampler.
+
+**Results**
+
+| | PatternSearchCV (patient, defaults) | BayesHalvingSearchCV |
+|---|---|---|
+| total evaluations | 22 | 28 |
+| fits @ 0.5% (2,093 rows) | 17 | 25 |
+| fits @ 100% (418,416 rows) | 5 | 3 |
+| full-fit equivalents | 5.085 | **3.125** |
+| wall-clock | 1481.6 s | 1280.6 s |
+| summed fit work | 2712.3 s | 2080.5 s |
+| best point | (4, 130, 17) | **(4, 130, 17)** |
+| best CV MAE | 805.038 | **805.038** |
+
+Reference, Experiment 13 (degenerate/all-column stratification, identical
+ladder): PatternSearchCV 22 evals, 5.09 equiv, best (4,130,17), MAE 805.038.
+BayesHalvingSearchCV 28 evals, 3.89 equiv, best (4,150,17), MAE **805.730**.
+
+**Finding: real stratification fixed BayesHalvingSearchCV's only real miss
+in this project's history, and made it cheaper too.** With the degenerate
+sampler (Experiment 13), BayesHalvingSearchCV landed on (4,150,17)/805.730 —
+a small but real miss of the true optimum. With the day-flags-only real
+stratification, it now finds the exact same optimum PatternSearchCV finds,
+(4,130,17)/805.038, at 3.125 full-fit equivalents — *cheaper* than its own
+prior 3.89. PatternSearchCV's result is unchanged in every respect (same
+evaluations, same equivalents, same point) — the fix specifically helped
+the estimator whose cheap-zone ranking signal drives its decisions more
+directly (GP-EI is more sensitive to how representative the cheap sample is
+than Hooke-Jeeves' local mesh moves, which only need a coarse "is this
+neighbor better" signal). Neither estimator touched the 10% intermediate
+rung this run — both jumped straight from 0.5% to 100% via the usual
+forced-final-polish/final-polish mechanism.
+
+Wall-clock this run (1481.6 s / 1280.6 s) ran noticeably slower than
+Experiment 13's matching arms (1157.6 s / 922.5 s, a ~28-39% gap versus this
+project's usual ~15-25% noise floor) — individual fits were observed taking
+2.9-4.0 minutes mid-run versus the usual ~1-2 minutes, consistent with
+machine load from a long session rather than a real cost difference;
+full-fit equivalents (unaffected by machine load) is the metric that
+matters here and shows a genuine, real improvement.
+
+Side note: `verbose=2` on these estimators also cascades into scikit-learn's
+own native per-fold `[CV] END ...` printing (`BaseSearchCV`'s own verbosity,
+triggered because `verbose` is passed through via `super().__init__`), in
+addition to this package's own per-decision log — a large volume of extra
+output distinct from the useful per-decision narration.
