@@ -1,8 +1,8 @@
 # BayesHalvingSearchCV & PatternSearchCV
 
-During my post-graduate studies in Data Science, I had to hyperparameter-tune
+During my post-graduate studies in Data Science at USI Switzerland, I had to hyperparameter-tune
 models on genuinely large datasets, and I went looking for a way to find good
-hyperparameters quickly instead of paying full price for every trial.
+hyperparameters quickly instead of paying full price for every fit.
 Inspired by MATLAB's Global Optimization Toolbox pattern search for discrete
 problems, I built a first version of what became `PatternSearchCV` — and even
 that first version already beat Bayesian search on real benchmarks, simply
