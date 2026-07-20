@@ -79,6 +79,8 @@ search = PatternSearchCV(
 search.fit(X, y)
 search.best_params_       # chosen ONLY from full-data evaluations
 search.local_optima_      # the map: every distinct optimum found
+search.cv_results_        # every point evaluated, and its score
+search.search_history_    # every confirmed-improving move across every start
 
 # or the Bayesian search, on the exact same multi-fidelity infrastructure:
 search = BayesHalvingSearchCV(estimator, param_grid, cv=TimeSeriesSplit(5),
