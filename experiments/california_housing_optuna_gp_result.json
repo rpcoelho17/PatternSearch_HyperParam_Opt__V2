@@ -1,0 +1,15 @@
+{
+  "arm": "Optuna GPSampler",
+  "wall": 663.596711397171,
+  "n_fits": 15,
+  "tiers": {
+    "20640": 15
+  },
+  "equiv": 15.0,
+  "best": {
+    "n_estimators": 210,
+    "max_features": 8,
+    "max_depth": 20
+  },
+  "best_mae": 0.3308263919388021
+}

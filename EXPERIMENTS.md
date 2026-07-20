@@ -33,6 +33,39 @@ methods that always use all rows, equivalents = evaluations.
 
 ---
 
+## The California Housing task (second validation dataset, 2026-07-19)
+
+Tune an `ExtraTreesRegressor` on scikit-learn's California Housing dataset
+(`Data/california_housing.csv`, 20,640 rows, 8 features, target =
+`MedHouseVal`, median house value in $100,000s; sourced via
+`sklearn.datasets.fetch_california_housing`, original data from StatLib,
+Pace & Barry 1997). No time ordering, so — unlike the retail task — this
+uses plain K-fold CV and `subsample="random"`, not `TimeSeriesSplit` /
+`subsample="stratified"`.
+
+**The official test space for this dataset** (grid shape kept the same as
+the retail task's three axes, bounds rescaled after a baseline sweep showed
+the retail bounds would put the true optimum at the search space's edge —
+see baseline sweep below) — every experiment on this dataset should use it:
+
+- `max_features` ∈ {2, 4, 6, 8}
+- `n_estimators` ∈ {10, 20, 30, …, 260} (26 values, unchanged from retail)
+- `max_depth` ∈ {5, 8, 11, 14, 17, 20, 25, 30} (8 values)
+
+- **CV**: `KFold(n_splits=5, shuffle=True, random_state=0)` — **Scoring**:
+  mean absolute error (lower = better)
+- **Sampling**: `subsample="random"` (no time ordering to stratify on)
+
+**Baseline sweep that set these bounds** (`ExtraTreesRegressor`, 5-fold CV,
+MAE, single-point evaluations at 100% data, not part of any search run):
+at the retail task's `max_depth<=17` and `max_features<=4` ceilings, MAE was
+still improving (`max_depth=17` → 0.3464 vs. `max_depth=20` → 0.3326 vs.
+`max_depth=None` → 0.3241; `max_features=4` → 0.3611 vs. `max_features=8` →
+0.3464 at `max_depth=17`), so both axes were widened until the improvement
+visibly flattened.
+
+---
+
 ## Reference records (from the original prototype notebook, not re-run)
 
 Source: `DatasetSize_and_ParamOpt_WORKING_(3Large_Aug_30_2025).ipynb` (kept
@@ -1383,3 +1416,201 @@ own native per-fold `[CV] END ...` printing (`BaseSearchCV`'s own verbosity,
 triggered because `verbose` is passed through via `super().__init__`), in
 addition to this package's own per-decision log — a large volume of extra
 output distinct from the useful per-decision narration.
+
+---
+
+## Experiment 18 — First cross-dataset validation: 4-way comparison on California Housing (2026-07-19, done)
+
+Script: `experiments/CaliforniaHousing_4way_benchmark.py` (Optuna leg run
+separately as `experiments/CH_optuna_gp_leg.py` under a different Python
+environment that has `torch` installed — see settings below — then merged).
+First validation of every finding in this log on a dataset other than the
+523K-row Italian retail set: **California Housing**
+(`Data/california_housing.csv`, scikit-learn's bundled dataset, 20,640 rows,
+8 features, target `MedHouseVal`; see the "California Housing task" section
+near the top of this file for the dataset's provenance and full search-space
+derivation). Unlike the retail task, this dataset has no time ordering, so
+CV and sampling differ accordingly (see full settings below).
+
+**Full settings used (every parameter, so this entry stands alone):**
+
+- **Dataset**: `Data/california_housing.csv`, 20,640 rows x 8 features,
+  target `MedHouseVal`. No preprocessing (already numeric, no categoricals).
+- **Estimator**: `ExtraTreesRegressor(n_jobs=1, random_state=0)` — all other
+  params left at sklearn defaults except the three being searched.
+- **Search space** (3 axes, 832 grid points):
+  - `max_features` in `{2, 4, 6, 8}`
+  - `n_estimators` in `{10, 20, ..., 260}` (26 values, step 10)
+  - `max_depth` in `{5, 8, 11, 14, 17, 20, 25, 30}` (8 values)
+- **CV**: `KFold(n_splits=5, shuffle=True, random_state=0)` (plain K-fold,
+  not `TimeSeriesSplit` — no time ordering in this dataset)
+- **Scoring**: `neg_mean_absolute_error` (MAE, lower = better)
+- **Sampling**: `subsample="random"` (no time ordering to stratify on, so
+  `subsample="stratified"` does not apply to this dataset)
+- **Data ladder**: package default, `data_zones=(0.005, 0.01, 0.1, 1.0)`
+  (0.5%/1%/10%/100% of 20,640 rows = 104/207/2,064/20,640 rows)
+- **`n_starts`**: 1 (single-start, package default) on both PatternSearchCV
+  and BayesHalvingSearchCV
+- **`random_state`**: 0 on every arm (Optuna samplers, `BayesHalvingSearchCV`,
+  `PatternSearchCV`, and the `KFold` splitter)
+- **`verbose`**: 2 on `BayesHalvingSearchCV` and both `PatternSearchCV` arms
+- **`n_jobs`**: -1 on all four search wrappers (parallel across CV folds);
+  `n_jobs=1` on the estimator itself (standard project convention)
+- **Optuna**: `GPSampler(seed=0)`, `n_trials=15` (matching this log's usual
+  Optuna trial budget) — every trial evaluates 100% of the data (no
+  multi-fidelity), so full-fit equivalents = trial count = 15.000
+- **`PatternSearchCV` arms**: `contraction="eager"` and `contraction="patient"`
+  run separately, all other params identical between the two
+- **`BayesHalvingSearchCV`**: package defaults for `n_iter`/`promote_k`/
+  `warmup` (25/3/3, printed by the run's own log header)
+- **Machine**: same 8-core Windows machine as every other entry in this log.
+  Optuna's `GPSampler` leg was run under a *different* Python environment
+  (`psc-opt`, this project's own `.venv` cannot install `torch` due to a
+  Windows `MAX_PATH` limit on this project's deeply nested folder path) —
+  wall-clock for that leg is not directly comparable to the other three, but
+  full-fit equivalents and MAE are unaffected by environment.
+
+**Results:**
+
+| | Optuna GPSampler | BayesHalvingSearchCV | PatternSearchCV (eager) | PatternSearchCV (patient) |
+|---|---|---|---|---|
+| total evaluations | 15 | 28 | 45 | 45 |
+| fits @ 0.5039% (104 rows) | 0 | 25 | 17 | 17 |
+| fits @ 100% (20,640 rows) | 15 | 3 | 28 | 28 |
+| full-fit equivalents | 15.000 | 3.126 | 28.086 | 28.086 |
+| wall-clock (s) | 663.6¹ | 380.7 | 2297.6 | 1444.6 |
+| best point (max_features, n_estimators, max_depth) | (8, 210, 20) | (6, 130, 25) | (4, 240, 30) | (4, 240, 30) |
+| best CV MAE | 0.3308 | 0.3182 | 0.3110 | 0.3110 |
+
+¹ Different Python environment (see Machine note above) — not directly
+comparable to the other three wall-clocks.
+
+**Findings:**
+
+1. **`BayesHalvingSearchCV`'s cost advantage replicates on a second, very
+   different dataset.** 3.126 full-fit equivalents vs. Optuna's 15 is a
+   **4.8x reduction** — matching the retail task's Experiment 17 result
+   (also 3.125 equivalents, also a 4.8x reduction) almost exactly, despite
+   this dataset being ~25x smaller, having no time ordering, and using a
+   completely different sampling mode (`random` vs `stratified`).
+2. **`PatternSearchCV` does NOT replicate its cost advantage here** — 28.086
+   full-fit equivalents is *more* than Optuna's 15, the opposite of the
+   retail result (5.04 equivalents, a 2.98x reduction there). On a dataset
+   this small, a single 100%-data fit is cheap enough that PatternSearchCV's
+   pattern-move polling (each move re-evaluates at full data once the ladder
+   reaches 100%) accumulates more full-data fits chasing marginal MAE gains
+   than Optuna's fixed 15-trial budget spends. The multi-fidelity ladder's
+   savings are largest when a full-data fit is expensive relative to a
+   cheap-tier fit; on a 20,640-row dataset that ratio is much smaller than
+   on the 523K-row retail set.
+3. **`PatternSearchCV` still finds the better answer** (MAE 0.3110 vs
+   BayesHalvingSearchCV's 0.3182 vs Optuna's 0.3308) at that higher
+   full-fit-equivalent cost, and both `contraction` modes converge to the
+   identical optimum on this dataset — differing only in wall-clock (patient
+   was faster here, 1444.6s vs 2297.6s, for the same result).
+4. Practical implication for choosing between the two estimators: dataset
+   size relative to `ExtraTreesRegressor`'s per-fit cost at 100% data
+   matters. On large datasets (retail, 523K rows) both estimators beat
+   Optuna on cost; on smaller datasets (California Housing, 20,640 rows)
+   `BayesHalvingSearchCV` still wins on cost but `PatternSearchCV` may cost
+   more than a fixed-budget Optuna run while still finding a better answer —
+   a cost/accuracy trade-off rather than a strict win on both axes.
+
+---
+
+## Experiment 19 — `n_starts=3`, default ladder, California Housing (2026-07-19, done)
+
+Script: `experiments/CaliforniaHousing_4way_defaultladder_nstarts3.py`.
+Same dataset, grid, and 4-way comparison as Experiment 18, changing only
+`n_starts` (1 -> 3) and keeping the package's default data ladder (unlike a
+prior, unlogged run on this dataset that used `n_starts=4` with a wider
+`[10%, 20%, 50%, 100%]` ladder — that run is not part of this log).
+
+**Full settings used (self-contained, per this project's logging
+convention):**
+
+- **Dataset**: `Data/california_housing.csv`, 20,640 rows x 8 features,
+  target `MedHouseVal`.
+- **Estimator**: `ExtraTreesRegressor(n_jobs=1, random_state=0)`.
+- **Search space** (same as Experiment 18, 832 grid points): `max_features`
+  in `{2, 4, 6, 8}`; `n_estimators` in `{10, 20, ..., 260}` (26 values);
+  `max_depth` in `{5, 8, 11, 14, 17, 20, 25, 30}` (8 values).
+- **CV**: `KFold(n_splits=5, shuffle=True, random_state=0)`.
+- **Scoring**: `neg_mean_absolute_error`.
+- **Sampling**: `subsample="random"`.
+- **Data ladder**: package default, `data_zones=(0.005, 0.01, 0.1, 1.0)`
+  (0.5%/1%/10%/100% of 20,640 rows = 104/207/2,064/20,640 rows).
+- **`n_starts`**: 3 on `BayesHalvingSearchCV` and both `PatternSearchCV`
+  arms (`contraction="eager"` and `contraction="patient"`, run separately).
+- **`random_state`**: 0 on every arm (Optuna sampler, both estimators,
+  `KFold` splitter).
+- **`verbose`**: 2 on `BayesHalvingSearchCV` and both `PatternSearchCV` arms.
+- **`n_jobs`**: -1 on all search wrappers; `n_jobs=1` on the estimator.
+- **Optuna**: result reused unchanged from Experiment 18
+  (`GPSampler(seed=0)`, 15 trials) — neither the ladder nor `n_starts`
+  applies to Optuna (no multi-fidelity, no multi-start concept), so its
+  result does not need to be re-run.
+- **`BayesHalvingSearchCV`**: package defaults for `n_iter`/`promote_k`/
+  `warmup` (25/3/3).
+- **Machine**: same 8-core Windows machine as every other entry in this log.
+
+**Results:**
+
+| | Optuna GPSampler | BayesHalvingSearchCV | PatternSearchCV (eager) | PatternSearchCV (patient) |
+|---|---|---|---|---|
+| total evaluations | 15 | 83 | 98 | 100 |
+| fits @ 0.5039% (104 rows) | 0 | 75 | 44 | 46 |
+| fits @ 100% (20,640 rows) | 15 | 8 | 54 | 54 |
+| full-fit equivalents | 15.000 | 8.378 | 54.222 | 54.232 |
+| wall-clock (s) | 663.6¹ | 255.7 | 1476.6 | 1547.7 |
+| best point (max_features, n_estimators, max_depth) | (8, 210, 20) | (8, 20, 25) | (4, 240, 30) | (4, 240, 30) |
+| best CV MAE | 0.3308 | 0.3400 | 0.3110 | 0.3110 |
+
+¹ Different Python environment (see Experiment 18's Machine note) — not
+directly comparable to the other three wall-clocks.
+
+**Finding: `n_starts` is not a reliable win — it only pays off when the
+search space is large enough that spreading climbers apart matters more
+than the wasted compute of climbers that don't find the optimum.**
+`BayesHalvingSearchCV` here actually landed on a *worse* optimum (MAE
+0.3400) with 3 starts than it did with a single start in Experiment 18
+(MAE 0.3182) — more starts did not help it converge on this run. The
+mechanism: when one climber finds the true optimum quickly, the other
+climbers keep polling and contracting around their own separate starting
+points, most of which are not near the optimum — that's real spent compute
+that doesn't improve the final answer, since `n_starts` runs every climber
+to completion (no elimination) rather than culling weak climbers early.
+`PatternSearchCV` still reliably found the true optimum (MAE 0.3110, same
+answer as Experiments 17/18) at both `n_starts=1` and `n_starts=3`, but at
+much higher full-fit-equivalent cost with 3 starts (54.2 vs 28.086 in
+Experiment 18) for no improvement in the answer. The advantage of multiple
+starts is expected to show up on much larger or more deceptive search
+spaces, where spreading starting points apart genuinely reduces the risk of
+every climber converging on the same local (non-global) optimum — not on a
+comparatively small, well-behaved 832-point grid like this one.
+
+**Verifying the scatter-search start-selection strategy is actually
+working, using this run's own data.** The strategy itself is documented in
+`API_REFERENCE.md`'s `n_starts` parameter entries for both estimators:
+starts are chosen by "scatter search (QMC pool + greedy maximin)" —
+implemented in `src/pattern_search_cv/_starts.py`'s `select_starts()`,
+shared by both estimators. After any explicit `start_points` and the grid
+midpoint take their seats, remaining starts are filled by drawing a Latin
+Hypercube candidate pool and greedily picking, one at a time, whichever
+candidate maximizes its *minimum* distance to every start already chosen
+(maximin) — the intent being maximally spread-out starting points, not a
+random or clustered scatter.
+
+This run's actual 3 starts (from the run log): `(max_features=4,
+n_estimators=130, max_depth=14)`, `(max_features=8, n_estimators=30,
+max_depth=30)`, `(max_features=8, n_estimators=260, max_depth=11)`.
+Normalizing each axis to its grid-index position in `[0, 1]` and computing
+pairwise Euclidean distance between the 3 chosen points gives a mean
+pairwise distance of **0.996** and a minimum pairwise distance of **0.857**.
+Compared against 20,000 trials of drawing 3 uniformly random points from the
+same 4x26x8 grid (random baseline: mean pairwise distance 0.766 +/- 0.186,
+min pairwise distance 0.514 +/- 0.209), this run's actual starts sit at the
+**89th percentile** for mean pairwise spread and the **94th percentile**
+for minimum pairwise spread — i.e., far more spread out than a typical
+random 3-point draw would be, confirming the greedy-maximin selection is
+doing what it's designed to do on this run.

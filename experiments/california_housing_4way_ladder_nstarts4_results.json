@@ -1,0 +1,69 @@
+{
+  "Optuna GPSampler": {
+    "arm": "Optuna GPSampler",
+    "wall": 663.596711397171,
+    "n_fits": 15,
+    "tiers": {
+      "20640": 15
+    },
+    "equiv": 15.0,
+    "best": {
+      "n_estimators": 210,
+      "max_features": 8,
+      "max_depth": 20
+    },
+    "best_mae": 0.3308263919388021
+  },
+  "BayesHalvingSearchCV": {
+    "arm": "BayesHalvingSearchCV",
+    "wall": 913.785295009613,
+    "n_fits": 110,
+    "tiers": {
+      "2064": 79,
+      "20640": 10,
+      "4128": 21
+    },
+    "equiv": 22.1,
+    "best": {
+      "max_features": 4,
+      "n_estimators": 240,
+      "max_depth": 30
+    },
+    "best_mae": 0.31096592709561466
+  },
+  "PatternSearchCV (eager)": {
+    "arm": "PatternSearchCV (eager)",
+    "wall": 1575.1731536388397,
+    "n_fits": 111,
+    "tiers": {
+      "2064": 51,
+      "4128": 11,
+      "10320": 25,
+      "20640": 24
+    },
+    "equiv": 43.8,
+    "best": {
+      "max_features": 4,
+      "n_estimators": 240,
+      "max_depth": 30
+    },
+    "best_mae": 0.31096592709561466
+  },
+  "PatternSearchCV (patient)": {
+    "arm": "PatternSearchCV (patient)",
+    "wall": 1088.0008902549744,
+    "n_fits": 76,
+    "tiers": {
+      "2064": 49,
+      "10320": 15,
+      "20640": 12
+    },
+    "equiv": 24.4,
+    "best": {
+      "max_features": 4,
+      "n_estimators": 240,
+      "max_depth": 30
+    },
+    "best_mae": 0.31096592709561466
+  }
+}
