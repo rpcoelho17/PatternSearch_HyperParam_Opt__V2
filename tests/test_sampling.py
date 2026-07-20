@@ -3,7 +3,7 @@
 import numpy as np
 from sklearn.model_selection import KFold, TimeSeriesSplit
 
-from pattern_search_cv._sampling import (
+from bayes_halving_search_cv._sampling import (
     ZoneSplitter,
     expanding_order,
     random_order,

@@ -6,8 +6,8 @@ import numpy as np
 import pytest
 from sklearn.utils import check_random_state
 
-from pattern_search_cv._gp import GPProposer
-from pattern_search_cv._space import Space
+from bayes_halving_search_cv._gp import GPProposer
+from bayes_halving_search_cv._space import Space
 
 
 SPACE = Space({"a": list(range(9)), "b": list(range(13)), "c": ["x", "y", "z"]})

@@ -24,7 +24,7 @@ from ._sampling import ZoneSplitter, expanding_order, random_order, stratified_o
 from ._space import Space
 from ._starts import select_starts
 
-logger = logging.getLogger("pattern_search_cv")
+logger = logging.getLogger("bayes_halving_search_cv")
 
 _DEFAULT_ZONES = (0.005, 0.01, 0.1, 1.0)
 

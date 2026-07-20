@@ -1,7 +1,7 @@
 # PatternSearchCV — Technical Specification
 
 **Status:** agreed design, ready for implementation
-**Target:** standalone PyPI package (`pattern-search-cv`), built to scikit-learn-contrib
+**Target:** standalone PyPI package (`bayes-halving-search-cv`), built to scikit-learn-contrib
 standards; contrib application after benchmarks; core scikit-learn not a near-term goal.
 **Provenance:** distilled from the working prototype in
 `DatasetSize_and_ParamOpt_WORKING_(3Large_Aug_30_2025).ipynb` (cells 106–110) and the

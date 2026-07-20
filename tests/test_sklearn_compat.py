@@ -3,7 +3,7 @@
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.utils.estimator_checks import parametrize_with_checks
 
-from pattern_search_cv import BayesHalvingSearchCV, PatternSearchCV
+from bayes_halving_search_cv import BayesHalvingSearchCV, PatternSearchCV
 
 
 @parametrize_with_checks([

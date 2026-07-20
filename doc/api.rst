@@ -4,13 +4,13 @@
 API Reference
 #############
 
-This page documents every public class in ``pattern_search_cv`` and every
+This page documents every public class in ``bayes_halving_search_cv`` and every
 parameter each one accepts. The text below is generated directly from each
 class's own docstring (NumPyDoc format) — the source of truth lives in the
-docstrings themselves (``src/pattern_search_cv/_search.py`` and
-``src/pattern_search_cv/_bayes.py``), not here.
+docstrings themselves (``src/bayes_halving_search_cv/_search.py`` and
+``src/bayes_halving_search_cv/_bayes.py``), not here.
 
-.. currentmodule:: pattern_search_cv
+.. currentmodule:: bayes_halving_search_cv
 
 Estimators
 ==========

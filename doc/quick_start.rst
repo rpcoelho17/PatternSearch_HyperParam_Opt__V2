@@ -15,9 +15,9 @@ From the repository root:
    .venv/Scripts/pip install -e .[test]
    .venv/Scripts/python -m pytest
 
-``pattern_search_cv`` has exactly three runtime dependencies: ``numpy``,
+``bayes_halving_search_cv`` has exactly three runtime dependencies: ``numpy``,
 ``scipy``, and ``scikit-learn`` — that holds for *both* estimators, including
-:class:`~pattern_search_cv.BayesHalvingSearchCV`'s Gaussian Process search
+:class:`~bayes_halving_search_cv.BayesHalvingSearchCV`'s Gaussian Process search
 (built on ``sklearn.gaussian_process.GaussianProcessRegressor`` plus a
 hand-rolled Expected Improvement acquisition — no Optuna, no torch).
 
@@ -26,7 +26,7 @@ Pattern search (``PatternSearchCV``)
 
 .. code-block:: python
 
-   from pattern_search_cv import PatternSearchCV
+   from bayes_halving_search_cv import PatternSearchCV
    from sklearn.model_selection import TimeSeriesSplit
 
    search = PatternSearchCV(
@@ -47,7 +47,7 @@ Bayesian search (``BayesHalvingSearchCV``)
 
 .. code-block:: python
 
-   from pattern_search_cv import BayesHalvingSearchCV
+   from bayes_halving_search_cv import BayesHalvingSearchCV
    from sklearn.model_selection import TimeSeriesSplit
 
    search = BayesHalvingSearchCV(
@@ -74,7 +74,7 @@ Logging
 
 Both estimators log every algorithmic decision (moves, contractions, ring
 calibrations and crossings, data climbs, cache statistics) to the
-``pattern_search_cv`` logger. ``verbose=1`` attaches a stream handler at
+``bayes_halving_search_cv`` logger. ``verbose=1`` attaches a stream handler at
 ``INFO``, ``verbose=2`` at ``DEBUG`` (also cascades into scikit-learn's own
 native per-fold ``[CV] END ...`` printing, since ``verbose`` is passed
 through to ``BaseSearchCV``).

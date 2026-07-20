@@ -1,11 +1,11 @@
-.. pattern-search-cv documentation master file.
+.. bayes-halving-search-cv documentation master file.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
 :notoc:
 
 ##################
-pattern-search-cv
+bayes-halving-search-cv
 ##################
 
 **Date**: |today| **Version**: |version|
@@ -18,8 +18,8 @@ Two scikit-learn-compatible hyperparameter search estimators, sharing one
 multi-fidelity "bullseye" data-growth mechanism and one scatter-search
 multi-start layer:
 
-* :class:`~pattern_search_cv.PatternSearchCV` — Hooke-Jeeves pattern search.
-* :class:`~pattern_search_cv.BayesHalvingSearchCV` — a from-scratch Gaussian
+* :class:`~bayes_halving_search_cv.PatternSearchCV` — Hooke-Jeeves pattern search.
+* :class:`~bayes_halving_search_cv.BayesHalvingSearchCV` — a from-scratch Gaussian
   Process + Expected Improvement Bayesian search (no Optuna, no torch), on
   the exact same multi-fidelity infrastructure.
 

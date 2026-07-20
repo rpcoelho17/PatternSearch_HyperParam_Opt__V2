@@ -15,7 +15,7 @@ import pandas as pd
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.model_selection import KFold
 
-from pattern_search_cv import BayesHalvingSearchCV, PatternSearchCV
+from bayes_halving_search_cv import BayesHalvingSearchCV, PatternSearchCV
 
 df = pd.read_csv(r"C:\FILES\Code\Benchmarking\Working_on_Train_Set\V2025\pattern-search-cv\Data\california_housing.csv")
 X = df.drop(columns=["MedHouseVal"])

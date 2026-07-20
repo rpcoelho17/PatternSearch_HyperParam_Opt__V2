@@ -16,7 +16,7 @@ from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import Matern
 from sklearn.utils import check_random_state
 
-logger = logging.getLogger("pattern_search_cv")
+logger = logging.getLogger("bayes_halving_search_cv")
 
 # Scored observations needed before trusting the GP surrogate. Deliberately
 # NOT the same knob as `warmup` (BullseyeController's ring-calibration

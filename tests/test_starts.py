@@ -7,8 +7,8 @@ import numpy as np
 import pytest
 from sklearn.utils import check_random_state
 
-from pattern_search_cv._space import Space
-from pattern_search_cv._starts import select_starts
+from bayes_halving_search_cv._space import Space
+from bayes_halving_search_cv._starts import select_starts
 
 
 SPACE = Space({"a": list(range(9)), "b": list(range(13)), "c": ["x", "y", "z"]})
@@ -20,7 +20,7 @@ def test_select_starts_matches_wrapper_delegation(n_starts, seed):
     """PatternSearchCV._select_starts must be a pure delegating wrapper: same
     args, same rng state in, identical result out."""
     from sklearn.tree import DecisionTreeRegressor
-    from pattern_search_cv import PatternSearchCV
+    from bayes_halving_search_cv import PatternSearchCV
 
     search = PatternSearchCV(
         DecisionTreeRegressor(random_state=0),

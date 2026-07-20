@@ -5,9 +5,9 @@ import math
 
 import pytest
 
-from pattern_search_cv._climber import Climber
-from pattern_search_cv._engine import Engine
-from pattern_search_cv._space import Space
+from bayes_halving_search_cv._climber import Climber
+from bayes_halving_search_cv._engine import Engine
+from bayes_halving_search_cv._space import Space
 
 
 def drive(climbers, space, func):

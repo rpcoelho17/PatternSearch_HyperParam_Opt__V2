@@ -1,20 +1,46 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pattern-search-cv"
-version = "0.1.0.dev0"
-description = "Hooke-Jeeves pattern search hyperparameter optimization for scikit-learn, with multi-fidelity data growth and scatter-search multi-start"
+name = "BayesHalvingSearchCV"
+version = "0.1.0"
+description = "scikit-learn hyperparameter search with multi-fidelity data growth and scatter-search multi-start: a from-scratch Bayesian (GP + Expected Improvement) search, BayesHalvingSearchCV, plus a Hooke-Jeeves pattern search, PatternSearchCV"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "BSD-3-Clause" }
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 authors = [{ name = "Rodrigo Pinto Coelho" }]
+keywords = [
+    "scikit-learn",
+    "hyperparameter-optimization",
+    "bayesian-optimization",
+    "pattern-search",
+    "multi-fidelity",
+    "gaussian-process",
+    "cross-validation",
+    "model-selection",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+]
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.10",
     "scikit-learn>=1.6,<1.10",
 ]
+
+[project.urls]
+Homepage = "https://github.com/rpcoelho17/PatternSearch_HyperParam_Opt__V2"
+Repository = "https://github.com/rpcoelho17/PatternSearch_HyperParam_Opt__V2"
 
 [project.optional-dependencies]
 test = ["pytest"]

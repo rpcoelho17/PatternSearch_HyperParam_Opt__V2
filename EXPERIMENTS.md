@@ -584,7 +584,7 @@ a few seconds, rather than paying for a full search per data point):
 1. Ran the real data pipeline (`train.csv` → int64→int32 → category
    codes → the same five dropped weather columns → 80/20 split) to get
    the training portion: 418,416 rows, 601 distinct stores.
-2. Called the actual library function, `pattern_search_cv._sampling
+2. Called the actual library function, `bayes_halving_search_cv._sampling
    .stratified_order(X)` — not a reimplementation — to get the real
    priority order the package would use.
 3. For each fraction `f`, took `k = ceil(f * n)` rows: the top-`k` of the
@@ -1593,7 +1593,7 @@ comparatively small, well-behaved 832-point grid like this one.
 working, using this run's own data.** The strategy itself is documented in
 `API_REFERENCE.md`'s `n_starts` parameter entries for both estimators:
 starts are chosen by "scatter search (QMC pool + greedy maximin)" —
-implemented in `src/pattern_search_cv/_starts.py`'s `select_starts()`,
+implemented in `src/bayes_halving_search_cv/_starts.py`'s `select_starts()`,
 shared by both estimators. After any explicit `start_points` and the grid
 midpoint take their seats, remaining starts are filled by drawing a Latin
 Hypercube candidate pool and greedily picking, one at a time, whichever

@@ -1,7 +1,7 @@
 # BayesHalvingSearchCV — Spec / Architectural Document
 
 **Audience:** Claude Sonnet 5, implementing and testing this estimator inside the
-existing `pattern-search-cv` repository.
+existing `bayes-halving-search-cv` repository.
 **Status:** agreed design, ready for implementation. Revision 3 (2026-07-15):
 dropped Optuna and torch as runtime dependencies entirely — the GP surrogate is
 built on `sklearn.gaussian_process.GaussianProcessRegressor` (already a required
@@ -62,15 +62,15 @@ user's name; add one line in the docstring clarifying the mechanism.
 
 ## 1. Packaging and environment — ONE pip library, NO new runtime dependencies
 
-**Hard requirement: both estimators ship in the same package, `pattern_search_cv`,
-from the same `pyproject.toml`, installed by the same `pip install pattern-search-cv`.**
+**Hard requirement: both estimators ship in the same package, `bayes_halving_search_cv`,
+from the same `pyproject.toml`, installed by the same `pip install bayes-halving-search-cv`.**
 There is no separate package, no separate repo, no separate `src/` tree.
 
-- New modules: `src/pattern_search_cv/_bayes.py` (the estimator) and
-  `src/pattern_search_cv/_gp.py` (the `GPProposer` class, §5) — alongside the
+- New modules: `src/bayes_halving_search_cv/_bayes.py` (the estimator) and
+  `src/bayes_halving_search_cv/_gp.py` (the `GPProposer` class, §5) — alongside the
   existing `_search.py`, `_climber.py`, `_engine.py`, `_sampling.py`, `_space.py`,
   `_fidelity.py`-to-be-added (§6).
-- `src/pattern_search_cv/__init__.py`: add `BayesHalvingSearchCV` to the imports
+- `src/bayes_halving_search_cv/__init__.py`: add `BayesHalvingSearchCV` to the imports
   and `__all__`, next to `PatternSearchCV`, `Space`, `Dimension`.
 - **`pyproject.toml`'s `dependencies` list does not change at all**: `numpy`,
   `scipy`, `scikit-learn`. `BayesHalvingSearchCV`'s GP mode is fully covered by
@@ -83,7 +83,7 @@ There is no separate package, no separate repo, no separate `src/` tree.
   §9 runs there, unconditionally — no `skipif torch missing` markers anywhere in
   the shipped test suite (a real simplification vs. Revision 1/2's design).
 
-- Repo root: `C:\FILES\Code\Benchmarking\Working_on_Train_Set\V2025\pattern-search-cv`
+- Repo root: `C:\FILES\Code\Benchmarking\Working_on_Train_Set\V2025\bayes-halving-search-cv`
   (git: `https://github.com/rpcoelho17/PatternSearch_HyperParam_Opt__V2`, branch `main`).
 - Package venv: `.venv` inside the repo — Python 3.11, sklearn 1.9.0, numpy 2.4.6.
   This is the only environment needed to build, test, and use both estimators.
@@ -96,7 +96,7 @@ There is no separate package, no separate repo, no separate `src/` tree.
 `C:\FILES\Code\Benchmarking\psc-opt` is a **pre-existing, separate venv** (torch
 2.5.1+cpu, optuna 4.9.0, sklearn 1.9.0 — already verified working) used **only**
 to run the §8 validation script, which imports Optuna's `GPSampler` purely as an
-external reference to compare our implementation against. `pattern_search_cv`
+external reference to compare our implementation against. `bayes_halving_search_cv`
 itself must be installed there too (`pip install -e .` from the repo, using that
 venv's pip) so the validation script can import `GPProposer`/`BayesHalvingSearchCV`
 normally — but this is a dev convenience for running the comparison, not a second
@@ -114,7 +114,7 @@ to initialize regardless of path).
 
 ## 2. What to reuse (exact inventory — do not reimplement these)
 
-All in `src/pattern_search_cv/`:
+All in `src/bayes_halving_search_cv/`:
 
 | Component | Location | What it gives you |
 |---|---|---|
@@ -153,7 +153,7 @@ not necessarily the code):
    and `target_tags` from the sub-estimator (BaseSearchCV misses these).
 7. **`y is None` guard and `n_samples < 1` guard** with the exact error-message
    styles used there (estimator checks grep for them).
-8. **Verbose conventions**: logger `pattern_search_cv` with NullHandler default;
+8. **Verbose conventions**: logger `bayes_halving_search_cv` with NullHandler default;
    `verbose>=1` attaches a StreamHandler and MUST print the header (optimizing
    metric via `_scoring_label()`-style resolution, cv class name, every dimension's
    values, the estimator's own knobs — for this estimator: `n_iter`, `promote_k`,
@@ -174,7 +174,7 @@ independently-written copies that could silently drift.
 1. Move the logic currently in `PatternSearchCV._select_starts` (QMC candidate
    pool + greedy maximin selection + `start_points` seat priority + midpoint
    fallback — read the existing method in `_search.py` in full before touching
-   anything) into a new **free function** in a new file, `src/pattern_search_cv/_starts.py`:
+   anything) into a new **free function** in a new file, `src/bayes_halving_search_cv/_starts.py`:
    ```python
    def select_starts(space, n_starts, start_points, rng):
        """Scatter-search start selection (MATLAB MultiStart-style): explicit
@@ -417,7 +417,7 @@ Notes:
 
 ## 5. `GPProposer` — the from-scratch Bayesian search core
 
-New file `src/pattern_search_cv/_gp.py`. This is the component §8 validates
+New file `src/bayes_halving_search_cv/_gp.py`. This is the component §8 validates
 against Optuna's `GPSampler`. Design it as a small, independently testable class
 with **no dependency on `BaseSearchCV`, `evaluate_candidates`, or anything
 sklearn-search-specific** — it only needs a `Space` and observed (index, score)
@@ -492,7 +492,7 @@ with zero model fitting involved.
 
 ## 6. `BullseyeController` — extract the fidelity methodology into a shared class
 
-New file `src/pattern_search_cv/_fidelity.py`. Encapsulates EXACTLY the rules
+New file `src/bayes_halving_search_cv/_fidelity.py`. Encapsulates EXACTLY the rules
 currently embedded in `Climber._commit_move/_calibrate/_zone_for`
 (`_climber.py` lines ~227–270 — read them first; they are the normative source):
 

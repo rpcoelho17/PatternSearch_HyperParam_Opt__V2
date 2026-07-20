@@ -63,7 +63,7 @@ confirmed on 100% of the data before it's trusted.
 ## Quick start
 
 ```python
-from pattern_search_cv import PatternSearchCV, BayesHalvingSearchCV
+from bayes_halving_search_cv import PatternSearchCV, BayesHalvingSearchCV
 from sklearn.model_selection import TimeSeriesSplit
 
 param_grid = {"max_depth": [3, 5, 7, 9, 12, 16], "min_samples_leaf": [1, 2, 4, 8]}
@@ -105,5 +105,5 @@ python -m venv .venv
 
 Logging: the package logs every algorithmic decision (moves, contractions,
 ring calibrations and crossings, data climbs, merges, cache statistics) to the
-`pattern_search_cv` logger. `verbose=1` attaches a stream handler at INFO,
+`bayes_halving_search_cv` logger. `verbose=1` attaches a stream handler at INFO,
 `verbose=2` at DEBUG.

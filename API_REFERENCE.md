@@ -32,7 +32,7 @@ pip install -e .
 ```
 
 ```python
-from pattern_search_cv import PatternSearchCV
+from bayes_halving_search_cv import PatternSearchCV
 from sklearn.model_selection import TimeSeriesSplit
 
 search = PatternSearchCV(
@@ -162,7 +162,7 @@ labels in `y`; here, "stratified" means the row-selection order is built by
 watching for **transitions in feature values** — the opposite of scikit-learn's usual meaning, so don't assume the two behave alike.
 
 ```python
-from pattern_search_cv import PatternSearchCV
+from bayes_halving_search_cv import PatternSearchCV
 from sklearn.model_selection import TimeSeriesSplit
 
 # subsample="random": a uniform random sample of rows, independent of any
@@ -227,7 +227,7 @@ actually carry repeatable structure and unlock the feature value aware transitio
 ## `PatternSearchCV`
 
 ```
-class pattern_search_cv.PatternSearchCV(estimator, param_grid, *, scoring=None, n_jobs=None, refit=True, cv=None, verbose=0, random_state=None, pre_dispatch='2*n_jobs', error_score=nan, return_train_score=False, poll='auto', mesh_expansion=1.0, contraction='patient', data_zones=(0.005, 0.01, 0.1, 1.0), warmup=3, subsample='auto', subsample_columns=None, n_starts=1, start_points=None)
+class bayes_halving_search_cv.PatternSearchCV(estimator, param_grid, *, scoring=None, n_jobs=None, refit=True, cv=None, verbose=0, random_state=None, pre_dispatch='2*n_jobs', error_score=nan, return_train_score=False, poll='auto', mesh_expansion=1.0, contraction='patient', data_zones=(0.005, 0.01, 0.1, 1.0), warmup=3, subsample='auto', subsample_columns=None, n_starts=1, start_points=None)
 ```
 
 Hooke-Jeeves pattern search over a discrete hyperparameter grid.
@@ -383,7 +383,7 @@ Standard `GridSearchCV`-style attributes (`best_params_`, `best_score_`,
 ## `BayesHalvingSearchCV`
 
 ```
-class pattern_search_cv.BayesHalvingSearchCV(estimator, param_grid, *, scoring=None, n_jobs=None, refit=True, cv=None, verbose=0, random_state=None, pre_dispatch='2*n_jobs', error_score=nan, return_train_score=False, n_iter=25, promote_k=3, data_zones=(0.005, 0.01, 0.1, 1.0), warmup=3, subsample='auto', subsample_columns=None, n_starts=1, start_points=None)
+class bayes_halving_search_cv.BayesHalvingSearchCV(estimator, param_grid, *, scoring=None, n_jobs=None, refit=True, cv=None, verbose=0, random_state=None, pre_dispatch='2*n_jobs', error_score=nan, return_train_score=False, n_iter=25, promote_k=3, data_zones=(0.005, 0.01, 0.1, 1.0), warmup=3, subsample='auto', subsample_columns=None, n_starts=1, start_points=None)
 ```
 
 Gaussian-Process Bayesian search over a discrete hyperparameter grid, with

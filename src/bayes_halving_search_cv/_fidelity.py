@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import math
 
-logger = logging.getLogger("pattern_search_cv")
+logger = logging.getLogger("bayes_halving_search_cv")
 
 
 class BullseyeController:

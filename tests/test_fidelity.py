@@ -1,7 +1,7 @@
 """BullseyeController - pure unit tests, no sklearn, no Space, hand-computed
 sequences (BAYESHALVINGSearchCV_SPEC.md section 9, items 3-6)."""
 
-from pattern_search_cv._fidelity import BullseyeController
+from bayes_halving_search_cv._fidelity import BullseyeController
 
 
 def test_warmup_buys_nothing_and_uses_exactly_two_readings():

@@ -7,7 +7,7 @@ from sklearn.datasets import make_regression
 from sklearn.model_selection import TimeSeriesSplit
 from sklearn.tree import DecisionTreeRegressor
 
-from pattern_search_cv import PatternSearchCV
+from bayes_halving_search_cv import PatternSearchCV
 
 
 GRID = {"max_depth": [2, 3, 4, 5, 6, 8, 10, 12],
@@ -51,7 +51,7 @@ def test_verbose_header_names_the_metric(data, caplog):
     """verbose>=1 must announce which metric is being optimized, and narrate
     the grid, before any search decisions are logged."""
     X, y = data
-    with caplog.at_level("INFO", logger="pattern_search_cv"):
+    with caplog.at_level("INFO", logger="bayes_halving_search_cv"):
         make_search(scoring="neg_mean_absolute_error", verbose=1).fit(X, y)
     messages = [r.message for r in caplog.records]
     header = next(m for m in messages if "optimizing metric" in m)
@@ -73,7 +73,7 @@ def test_verbose_header_reports_poll_and_contraction(data, caplog, poll,
     resolved from 'auto', silently omitting it for explicit values, and
     never logged contraction at all."""
     X, y = data
-    with caplog.at_level("INFO", logger="pattern_search_cv"):
+    with caplog.at_level("INFO", logger="bayes_halving_search_cv"):
         make_search(poll=poll, contraction=contraction, verbose=1).fit(X, y)
     messages = [r.message for r in caplog.records]
     assert any(f"contraction={contraction!r}" in m for m in messages)
@@ -90,7 +90,7 @@ def test_verbose_logs_cv_summary_matching_prototype_format(data, caplog):
     per-fold arrays AND their means for EV/MAE/MSE/RMSE/R2, on the winning
     params, over the complete dataset."""
     X, y = data
-    with caplog.at_level("INFO", logger="pattern_search_cv"):
+    with caplog.at_level("INFO", logger="bayes_halving_search_cv"):
         search = make_search(verbose=1).fit(X, y)
     messages = [r.message for r in caplog.records]
     assert any("Cross Validation Performance" in m for m in messages)
@@ -107,7 +107,7 @@ def test_verbose_zero_skips_cv_summary(data, caplog):
     """The extra cross_validate pass must never run at verbose=0 - it costs
     real fits and must be strictly opt-in."""
     X, y = data
-    with caplog.at_level("INFO", logger="pattern_search_cv"):
+    with caplog.at_level("INFO", logger="bayes_halving_search_cv"):
         make_search(verbose=0).fit(X, y)
     assert not any("Cross Validation Performance" in r.message
                   for r in caplog.records)

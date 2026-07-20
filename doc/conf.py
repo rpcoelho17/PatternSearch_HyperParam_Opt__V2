@@ -9,10 +9,10 @@ import sys
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 from importlib.metadata import version as get_version
 
-project = "pattern-search-cv"
+project = "bayes-halving-search-cv"
 copyright = "2026, Rodrigo Pinto Coelho"
 author = "Rodrigo Pinto Coelho"
-release = get_version("pattern-search-cv")
+release = get_version("bayes-halving-search-cv")
 version = ".".join(release.split(".")[:3])
 
 # -- General configuration ---------------------------------------------------
