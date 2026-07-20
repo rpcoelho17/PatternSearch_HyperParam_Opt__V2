@@ -12,7 +12,7 @@ import logging
 import numpy as np
 from sklearn.utils import _safe_indexing
 
-logger = logging.getLogger("bayes_halving_search_cv")
+logger = logging.getLogger("SearchCV")
 
 
 def _bit_reversed_order(n):

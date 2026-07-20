@@ -105,5 +105,5 @@ python -m venv .venv
 
 Logging: the package logs every algorithmic decision (moves, contractions,
 ring calibrations and crossings, data climbs, merges, cache statistics) to the
-`bayes_halving_search_cv` logger. `verbose=1` attaches a stream handler at INFO,
+`SearchCV` logger. `verbose=1` attaches a stream handler at INFO,
 `verbose=2` at DEBUG.

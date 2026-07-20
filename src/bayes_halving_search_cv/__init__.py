@@ -12,4 +12,4 @@ from ._space import Dimension, Space
 __all__ = ["PatternSearchCV", "BayesHalvingSearchCV", "Space", "Dimension"]
 __version__ = "0.1.0"
 
-logging.getLogger("bayes_halving_search_cv").addHandler(logging.NullHandler())
+logging.getLogger("SearchCV").addHandler(logging.NullHandler())

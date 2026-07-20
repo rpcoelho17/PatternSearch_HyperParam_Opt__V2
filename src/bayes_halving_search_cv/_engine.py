@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 
-logger = logging.getLogger("bayes_halving_search_cv")
+logger = logging.getLogger("SearchCV")
 
 
 class Engine:

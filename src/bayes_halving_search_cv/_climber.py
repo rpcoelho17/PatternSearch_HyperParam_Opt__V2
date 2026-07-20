@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 import math
 
-logger = logging.getLogger("bayes_halving_search_cv")
+logger = logging.getLogger("SearchCV")
 
 _CONVERGENCE_STREAK = 3  # failed sweep+pattern passes at full data before stopping
 

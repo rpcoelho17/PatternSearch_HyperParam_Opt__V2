@@ -133,7 +133,7 @@ def test_shared_cache_reduces_fits_across_identical_starts(data):
 # ---- 19: verbose header -----------------------------------------------------
 def test_verbose_header_names_metric_zones_and_starts(data, caplog):
     X, y = data
-    with caplog.at_level("INFO", logger="bayes_halving_search_cv"):
+    with caplog.at_level("INFO", logger="SearchCV"):
         make_search(scoring="neg_mean_absolute_error", verbose=1,
                    n_starts=2).fit(X, y)
     messages = [r.message for r in caplog.records]
@@ -148,7 +148,7 @@ def test_verbose_zero_skips_cv_summary(data, caplog):
     real fits and must be strictly opt-in (mirrors PatternSearchCV's
     test_verbose_zero_skips_cv_summary)."""
     X, y = data
-    with caplog.at_level("INFO", logger="bayes_halving_search_cv"):
+    with caplog.at_level("INFO", logger="SearchCV"):
         make_search(verbose=0).fit(X, y)
     assert not any("Cross Validation Performance" in r.message
                   for r in caplog.records)

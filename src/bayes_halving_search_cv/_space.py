@@ -16,7 +16,7 @@ from numbers import Integral, Real
 
 import numpy as np
 
-logger = logging.getLogger("bayes_halving_search_cv")
+logger = logging.getLogger("SearchCV")
 
 
 def _expand_grid_spec(name, spec):

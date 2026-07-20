@@ -74,7 +74,7 @@ Logging
 
 Both estimators log every algorithmic decision (moves, contractions, ring
 calibrations and crossings, data climbs, cache statistics) to the
-``bayes_halving_search_cv`` logger. ``verbose=1`` attaches a stream handler at
+``SearchCV`` logger. ``verbose=1`` attaches a stream handler at
 ``INFO``, ``verbose=2`` at ``DEBUG`` (also cascades into scikit-learn's own
 native per-fold ``[CV] END ...`` printing, since ``verbose`` is passed
 through to ``BaseSearchCV``).
