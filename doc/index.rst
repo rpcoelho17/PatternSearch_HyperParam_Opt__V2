@@ -1,12 +1,12 @@
-.. bayes-halving-search-cv documentation master file.
+.. BayesHalvingSearchCV documentation master file.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
 :notoc:
 
-##################
-bayes-halving-search-cv
-##################
+######################
+BayesHalvingSearchCV
+######################
 
 **Date**: |today| **Version**: |version|
 

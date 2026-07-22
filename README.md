@@ -1,5 +1,8 @@
 # BayesHalvingSearchCV & PatternSearchCV
 
+[![PyPI](https://img.shields.io/pypi/v/BayesHalvingSearchCV)](https://pypi.org/project/BayesHalvingSearchCV/)
+[![Docs](https://img.shields.io/badge/docs-online-blue)](https://rpcoelho17.github.io/PatternSearch_HyperParam_Opt__V2/)
+
 During my post-graduate studies in Data Science at USI Switzerland, I had to hyperparameter-tune
 models on genuinely large datasets, and I went looking for a way to find good
 hyperparameters quickly instead of paying full price for every fit.

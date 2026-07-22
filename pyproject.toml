@@ -41,6 +41,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/rpcoelho17/PatternSearch_HyperParam_Opt__V2"
 Repository = "https://github.com/rpcoelho17/PatternSearch_HyperParam_Opt__V2"
+Documentation = "https://rpcoelho17.github.io/PatternSearch_HyperParam_Opt__V2/"
 
 [project.optional-dependencies]
 test = ["pytest"]
