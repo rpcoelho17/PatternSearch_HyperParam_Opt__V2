@@ -26,6 +26,40 @@ repository root:
    .venv/Scripts/pip install -e .[test]
    .venv/Scripts/python -m pytest
 
+Specifying ``param_grid``
+==========================
+
+``param_grid`` is a plain dict. Each value can be **either** an explicit
+list of values, **or** a ``(low, high, num)`` tuple that gets expanded into
+an evenly-spaced grid (like ``numpy.linspace``) — and you can freely mix
+both forms in the same grid. Both estimators build their search space from
+``param_grid`` in exactly the same way — this is not something you
+configure per-estimator.
+
+.. code-block:: python
+
+   # Form 1: explicit lists - use when you know exactly which values matter
+   param_grid = {
+       "max_features": [2, 3, 4],
+       "criterion": ["squared_error", "absolute_error"],
+   }
+
+   # Form 2: (low, high, num) tuples - use for a regular sweep across a range
+   param_grid = {
+       "n_estimators": (10, 260, 26),   # -> 10, 20, 30, ..., 260 (26 values)
+       "max_depth": (5, 17, 13),        # -> 5, 6, 7, ..., 17 (13 values)
+   }
+
+   # Both forms together, in one grid:
+   param_grid = {
+       "max_features": [2, 3, 4],        # explicit list
+       "n_estimators": (10, 260, 26),    # tuple spec
+       "max_depth": (5, 17, 13),         # tuple spec
+   }
+
+Integer-endpoint tuples (like the two above) produce an integer grid
+automatically; float endpoints produce a float grid.
+
 Pattern search (``PatternSearchCV``)
 =====================================
 
