@@ -20,15 +20,16 @@ confirmed on 100% of the data before it's trusted.
 For the full design rationale behind every default, see
 [`PatternSearchCV_SPEC.md`](PatternSearchCV_SPEC.md) and
 [`BAYESHALVINGSearchCV_SPEC.md`](BAYESHALVINGSearchCV_SPEC.md). For a
-generated, browsable version of this same reference (once the package is
-ready to publish), see the Sphinx site in [`doc/`](doc/).
+generated, browsable version of this same reference, see the Sphinx site in
+[`doc/`](doc/), published at
+https://rpcoelho17.github.io/PatternSearch_HyperParam_Opt__V2/.
 
 ---
 
 ## Quick Start
 
 ```bash
-pip install -e .
+pip install BayesHalvingSearchCV
 ```
 
 ```python
