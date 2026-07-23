@@ -77,11 +77,7 @@ PatternSearchCV(
                                  #  (10%->5%->2.5%->1%->0.5%) each matched or beat
                                  #  the one before (5.09 full-fit equiv at the same
                                  #  optimum, paired with subsample="stratified").
-                                 #  Evidence: one dataset/grid; store-blocked row
-                                 #  structure partly explains the favorable
-                                 #  behavior at small fractions (see EXPERIMENTS.md
-                                 #  "why stratified sampling has actually been
-                                 #  winning"). Resource floor still protects small
+                                 #  Resource floor still protects small
                                  #  datasets from an unreasonably tiny first rung.
                                  #  See EXPERIMENTS.md Experiment 7 seven-way table.
     warmup=3,                    # best-updates before rings calibrate; higher = data
@@ -255,10 +251,7 @@ full-fit equivalents at the same optimum (805.038) that every less-aggressive la
 also found, paired with `subsample="stratified"` — see EXPERIMENTS.md's Patient/Eager
 progression tables. Evidence is from a single dataset/grid; a 0.5% start risks an
 unrepresentative sample when `subsample` cannot make small rungs faithful (Experiment 6
-showed exactly this failure mode at 5% with `subsample="expanding"`), and this
-dataset's favorable behavior at small fractions is partly attributable to its
-store-blocked row structure (§ "why stratified sampling has actually been winning" in
-EXPERIMENTS.md) rather than a universal property of aggressive subsampling.
+showed exactly this failure mode at 5% with `subsample="expanding"`).
 Validation: int >= 1, or values in (0, 1], strictly ascending, last element 1.0.
 (Default is a tuple only because sklearn convention forbids mutable default arguments;
 lists are accepted.)

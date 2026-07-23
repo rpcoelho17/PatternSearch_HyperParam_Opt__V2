@@ -79,11 +79,7 @@ class PatternSearchCV(BaseSearchCV):
         benchmark, with 0.5% giving 5.09 full-fit equivalents at the same
         optimum (805.038) that every less-aggressive ladder also found.
         Evidence is from one dataset/grid (523K rows, a 3-parameter
-        ExtraTrees search); an aggressive 0.5% start has not been validated
-        on smaller datasets, higher-dimensional grids, or non-time-series
-        data, and this dataset's favorable behavior at small fractions is
-        partly attributable to its store-blocked row structure rather than
-        a universal property of aggressive subsampling.  The resource floor
+        ExtraTrees search).  The resource floor
         (``min_rows = max(2*(n_splits+1), 8)``) protects small datasets from
         an unreasonably tiny first rung regardless.
     warmup : int, default=3

@@ -7,19 +7,24 @@ Getting started
 Installation
 ============
 
-From the repository root:
-
 .. code-block:: bash
 
-   python -m venv .venv
-   .venv/Scripts/pip install -e .[test]
-   .venv/Scripts/python -m pytest
+   pip install BayesHalvingSearchCV
 
 ``bayes_halving_search_cv`` has exactly three runtime dependencies: ``numpy``,
 ``scipy``, and ``scikit-learn`` — that holds for *both* estimators, including
 :class:`~bayes_halving_search_cv.BayesHalvingSearchCV`'s Gaussian Process search
 (built on ``sklearn.gaussian_process.GaussianProcessRegressor`` plus a
 hand-rolled Expected Improvement acquisition — no Optuna, no torch).
+
+For development (running the test suite from a source checkout), from the
+repository root:
+
+.. code-block:: bash
+
+   python -m venv .venv
+   .venv/Scripts/pip install -e .[test]
+   .venv/Scripts/python -m pytest
 
 Pattern search (``PatternSearchCV``)
 =====================================
@@ -41,6 +46,8 @@ Pattern search (``PatternSearchCV``)
    search.fit(X, y)
    search.best_params_       # chosen ONLY from full-data evaluations
    search.local_optima_      # the map: every distinct optimum found
+   search.cv_results_        # every point evaluated, and its score
+   search.search_history_    # every confirmed-improving move across every start
 
 Bayesian search (``BayesHalvingSearchCV``)
 ============================================
@@ -61,6 +68,8 @@ Bayesian search (``BayesHalvingSearchCV``)
    )
    search.fit(X, y)
    search.best_params_
+   search.local_optima_      # the map: every distinct optimum found
+   search.cv_results_        # every point evaluated, and its score
    search.search_history_    # every trial: start index, params, fraction, score
 
 ``param_grid``, ``subsample``/``subsample_columns``, and multi-start

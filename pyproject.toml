@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "BayesHalvingSearchCV"
-version = "0.1.0"
+version = "0.1.1"
 description = "scikit-learn hyperparameter search with multi-fidelity data growth and scatter-search multi-start: a from-scratch Bayesian (GP + Expected Improvement) search, BayesHalvingSearchCV, plus a Hooke-Jeeves pattern search, PatternSearchCV"
 readme = "README.md"
 requires-python = ">=3.10"

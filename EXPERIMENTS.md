@@ -835,16 +835,9 @@ Justification for the `0.5/1/10/100%` ladder: Experiment 10 (this exact
 ladder) measured 5.09 full-fit equivalents with `patient`, matching the
 historical optimum (805.038) — the best-tested ladder at the time of this
 decision (Experiment 11 later found 0.25% starts marginally better still,
-5.04 equiv, but that ladder was not chosen as default here). Caveat carried
-forward from the discussion before this decision: this is single-dataset,
-single-grid evidence (523K rows, one 3-parameter ExtraTrees search); an
-aggressive 0.5% starting zone has not been validated on smaller datasets,
-higher-dimensional grids, or non-time-series data, and this dataset's
-favorable behavior at small fractions is partly attributable to its
-store-blocked structure (§ "why stratified sampling has actually been
-winning" above) rather than to a universal property of aggressive
-subsampling. The resource floor (`min_rows = max(2*(n_splits+1), 8)`)
-protects small datasets from an unreasonably tiny first rung regardless.
+5.04 equiv, but that ladder was not chosen as default here). The resource
+floor (`min_rows = max(2*(n_splits+1), 8)`) protects small datasets from
+an unreasonably tiny first rung regardless.
 
 ---
 

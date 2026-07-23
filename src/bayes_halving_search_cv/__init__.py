@@ -10,6 +10,6 @@ from ._search import PatternSearchCV
 from ._space import Dimension, Space
 
 __all__ = ["PatternSearchCV", "BayesHalvingSearchCV", "Space", "Dimension"]
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 logging.getLogger("SearchCV").addHandler(logging.NullHandler())

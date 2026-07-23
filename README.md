@@ -65,6 +65,10 @@ confirmed on 100% of the data before it's trusted.
 
 ## Quick start
 
+```bash
+pip install BayesHalvingSearchCV
+```
+
 ```python
 from bayes_halving_search_cv import PatternSearchCV, BayesHalvingSearchCV
 from sklearn.model_selection import TimeSeriesSplit
