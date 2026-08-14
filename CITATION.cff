@@ -1,0 +1,28 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "BayesHalvingSearchCV & PatternSearchCV"
+abstract: >-
+  Scikit-learn-compatible hyperparameter search estimators — a from-scratch
+  Bayesian (Gaussian Process + Expected Improvement) search and a
+  Hooke-Jeeves pattern search — sharing one multi-fidelity "bullseye"
+  data-growth mechanism and one scatter-search multi-start layer, for
+  faster hyperparameter tuning on large datasets.
+authors:
+  - family-names: "Pinto Coelho"
+    given-names: "Rodrigo"
+version: 0.1.1
+date-released: "2026-07-22"
+license: BSD-3-Clause
+repository-code: "https://github.com/rpcoelho17/PatternSearch_HyperParam_Opt__V2"
+url: "https://rpcoelho17.github.io/PatternSearch_HyperParam_Opt__V2/"
+keywords:
+  - scikit-learn
+  - hyperparameter-optimization
+  - bayesian-optimization
+  - pattern-search
+  - hyperparameter-tuning
+  - gaussian-process
+  - automl
+  - machine-learning
+  - cross-validation
+  - model-selection
